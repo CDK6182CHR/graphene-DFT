@@ -55,6 +55,11 @@ GVector2D GVector2D::operator-(const GVector2D& g) const
 	return GVector2D(x() - g.x(), y() - g.y());
 }
 
+GVector2D GVector2D::operator-() const
+{
+	return GVector2D(-x(),-y());
+}
+
 GVector2D& GVector2D::operator+=(const GVector2D& g)
 {
 	gsl_vector_set(v, 0, x() + g.x());

@@ -67,16 +67,19 @@ inline int _cal_N_set();
 //计算参数
 const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
 const double KCut=6e10;//平面波截断半径，决定基组数目
+const double prec = 1e-3; //收敛相对误差判据
+const int MaxStep = 20;  //最大迭代步数
 const int N=_cal_N();//晶胞数量
 const int KCount=10;//1BZ高对称点路径每段折线的K点数目
-const int RCount=40;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
+const int RCount=50;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
 
 const GVector2D KPath[KPOINTS] = {
 	GVector2D(0,4 * M_PI / 3 / A0),  //K
 	GVector2D(0,0),  //Gamma
 	GVector2D(M_PI / sqrt(3) / A0,M_PI / A0),  //M
-	GVector2D(0,4 * M_PI / 3 / A0)  //K
+	GVector2D(0,4 * M_PI / 3 / A0),  //K
+	//GVector2D(0,0),  //Gamma
 };
 
 GVector2D* Rls, * Khs;
@@ -162,28 +165,47 @@ double phi_2s(double r)
 	return pow(ABohr, -1.5) * (1 - 0.5 * r / ABohr) * exp(-0.5 * r / ABohr) / sqrt(8 * M_PI);
 }
 
+//分数坐标->直角坐标。(a,b)/RCount为分数坐标
 GVector2D directPos(int a, int b)
 {
-	return GVector2D(a * A1.x() + b * A2.x(), a * A1.y() + b * A2.y());
+	return GVector2D((a+0.5)/RCount * A1.x() + (b+0.5)/RCount * A2.x(), 
+		(a+0.5)/RCount * A1.y() + (b+0.5)/RCount * A2.y());
 }
 
+//double dis(const GVector2D& center, int a1, int a2)
+//{
+//	double X = (A1.x() * a1 + A2.x() * a2)/RCount;
+//	double Y = (A1.y() * a1 + A2.y() * a2)/RCount;
+//	double dx = center.x() - X, dy = center.y() - Y;
+//	GVector2D dr(dx, dy);
+//	
+//	if (dr * A2 > A0 * A0 / 2)
+//		dr -= A2;
+//	else if (dr * A2 < -A0 * A0 / 2)
+//		dr += A2;
+//	if (dr * A1 > A0 * A0 / 2)
+//		dr -= A1;
+//	else if (dr * A1 < -A0 * A0 / 2)
+//		dr += A1;
+//
+//	return dr.abs();
+//}
+
+//重新实现，按照最小像力约定，最近邻8个中找个最近的
 double dis(const GVector2D& center, int a1, int a2)
 {
-	double X = (A1.x() * a1 + A2.x() * a2)/RCount;
-	double Y = (A1.y() * a1 + A2.y() * a2)/RCount;
-	double dx = center.x() - X, dy = center.y() - Y;
-	GVector2D dr(dx, dy);
-	
-	if (dr * A2 > A0 * A0 / 2)
-		dr -= A2;
-	else if (dr * A2 < -A0 * A0 / 2)
-		dr += A2;
-	if (dr * A1 > A0 * A0 / 2)
-		dr -= A1;
-	else if (dr * A1 < -A0 * A0 / 2)
-		dr += A1;
-
-	return dr.abs();
+	static const constexpr int NNeigh = 8;
+	static const GVector2D neigh[NNeigh] = {
+		A1,-A1,A2,-A2,A1 + A2,A1 - A2,A2 - A1,-A1 - A2
+	};
+	GVector2D r = directPos(a1, a2);
+	double q = r.dis(center);
+	for (int i = 0; i < NNeigh; i++) {
+		double nq = r.dis(center + neigh[i]);
+		if (nq < q)
+			q = nq;
+	}
+	return q;
 }
 
 double dis(int a1, int b1, int a2, int b2)

@@ -19,29 +19,36 @@ void process_path()
 		GVector2D dk = (k2 - k1) * (1.0/ double(KCount));
 		for (int j = 0; j < KCount; j++) {
 			cout << kcnt++ << ' ';
-			solve_k(k);
-			fp << x << ' ';
-			cout << "E[i]=";
-			for (int h = 0; h < NSet; h++) {
-				fp << gsl_vector_get(Ek, h) << ' ';
-				//cout<< gsl_vector_get(Ek, h) << ' ';
+			bool f = solve_k(k);
+			if (f) {
+				fp << x << ' ';
+				cout << "E[i]=";
+				for (int h = 0; h < NSet; h++) {
+					fp << gsl_vector_get(Ek, h) << ' ';
+					//cout<< gsl_vector_get(Ek, h) << ' ';
+				}
+				fp << endl;
+				fp.flush();
+				cout << endl;
 			}
-			fp << endl;
-			cout << endl;
 			k += dk;
 			x += dk.abs();
 		}
+
+			
 		if (i == KPOINTS - 2) {//最后一次循环，补充最后一个点
 			cout << kcnt << ' ';
-			solve_k(k);
-			fp << x << ' ';
-			cout << "E[i]=";
-			for (int h = 0; h < NSet; h++) {
-				fp << gsl_vector_get(Ek, h) << ' ';
-				//cout<< gsl_vector_get(Ek, h) << ' ';
+			bool f=solve_k(k);
+			if (f) {
+				fp << x << ' ';
+				cout << "E[i]=";
+				for (int h = 0; h < NSet; h++) {
+					fp << gsl_vector_get(Ek, h) << ' ';
+					//cout<< gsl_vector_get(Ek, h) << ' ';
+				}
+				fp << endl;
+				cout << endl;
 			}
-			fp << endl;
-			cout << endl;
 		}
 	}
 	path << x << ' ' << KPath[KPOINTS - 1] << endl;

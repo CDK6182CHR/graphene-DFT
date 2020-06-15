@@ -4,6 +4,10 @@ eig_file = r'EIGENVAL.txt'
 path_file = r'KPATH.txt'
 
 K_names = ['K','G','M','K']
+#K_names = ['G','M','K','G']
+excludes = [8,11,16]
+
+excludes = []
 
 e=1.602e-19
 
@@ -12,10 +16,18 @@ with open(eig_file,'r') as fp:
                     filter(bool,fp.readlines())))
 trans = list(zip(*data))
 
-ks = trans[0]
-Es = trans[1:]
+ks = list(trans[0])
+print(len(ks))
+print("Excludes: ",excludes)
+
+Es = list(map(list,trans[1:]))
 Emin=min(map(min,Es))
 Emax=max(map(max,Es))
+
+for i in sorted(excludes,reverse=True):
+    del ks[i]
+    for E in Es:
+        del E[i]
 
 with open(path_file,'r') as fp:
     k_dots = list(map(lambda line:float(line.split()[0]),
@@ -25,10 +37,12 @@ assert len(k_dots)==len(K_names)
 
 for E in Es:
     plt.plot(ks,[Ei/e for Ei in E],'b')
+    plt.plot(ks,[Ei/e for Ei in E],'b.')
 
 for k in k_dots:
     plt.plot([k,k],[Emin/e,Emax/e])
 plt.plot([k_dots[0],k_dots[-1]],[0,0])
+#plt.ylim((-100,200))
 
 plt.xticks(ticks=k_dots,labels=K_names)
 plt.show()

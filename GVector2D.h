@@ -28,6 +28,7 @@ public:
 	GVector2D& operator=(GVector2D&& g);
 	GVector2D operator+(const GVector2D& g)const;
 	GVector2D operator-(const GVector2D& g)const;
+	GVector2D operator-()const;
 	GVector2D& operator+=(const GVector2D& g);
 	GVector2D& operator-=(const GVector2D& g);
 	inline bool operator==(const GVector2D& g)const {

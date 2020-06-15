@@ -13,7 +13,7 @@ GComplex::GComplex(const gsl_complex& g) :
 
 GComplex::operator gsl_complex() const
 {
-	return c;
+	return gsl_complex_rect(real(),imag());
 }
 
 GComplex GComplex::operator*(double x) const
@@ -25,6 +25,13 @@ GComplex GComplex::operator*(const GComplex& g) const
 {
 	return GComplex(real() * g.real() - imag() * g.imag(),
 		real() * g.imag() + imag()*g.real());
+}
+
+GComplex& GComplex::operator*=(double x)
+{
+	c.dat[0] *= x;
+	c.dat[1] *= x;
+	return *this;
 }
 
 GComplex& GComplex::operator+=(GComplex&& a)
@@ -46,6 +53,21 @@ GComplex& GComplex::operator-=(GComplex&& a)
 	c.dat[0] -= a.real();
 	c.dat[1] -= a.imag();
 	return *this;
+}
+
+GComplex GComplex::operator+(const GComplex& a) const
+{
+	return GComplex(real() + a.real(), imag() + a.imag());
+}
+
+GComplex GComplex::operator-(const GComplex& a)const
+{
+	return GComplex(real() - a.real(), imag() - a.imag());
+}
+
+GComplex GComplex::operator-() const
+{
+	return GComplex(-real(),-imag());
 }
 
 GComplex GComplex::operator/(double x) const

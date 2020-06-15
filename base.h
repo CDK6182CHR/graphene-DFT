@@ -29,6 +29,8 @@ extern const double e,e2k;  //元电荷
 //计算参数
 extern const double RCut;//正空间晶格范围，即做FT的积分范围
 extern const double KCut;//平面波截断半径
+extern const double prec; //收敛的相对误差判据
+extern const int MaxStep; //最大迭代步数。超过就判定不收敛
 extern const int N;//晶胞数量
 extern const int KCount;//1BZ高对称点路径每段折线的K点数目
 extern const int RCount;//正空间划分mesh的密度。将每一条基矢等分成多少段。
