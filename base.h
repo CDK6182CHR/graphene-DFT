@@ -31,6 +31,7 @@ extern const double RCut;//正空间晶格范围，即做FT的积分范围
 extern const double KCut;//平面波截断半径
 extern const double prec; //收敛的相对误差判据
 extern const int MaxStep; //最大迭代步数。超过就判定不收敛
+extern const int LCount;  //沿每个基矢方向的晶胞数量
 extern const int N;//晶胞数量
 extern const int KCount;//1BZ高对称点路径每段折线的K点数目
 extern const int RCount;//正空间划分mesh的密度。将每一条基矢等分成多少段。
@@ -76,3 +77,4 @@ double dis(int a1, int b1, int a2, int b2);//不考虑平移对称性
 //输出正空间的数据到二进制文件
 void output_real_matrix(const gsl_matrix * m, const char* filename);
 void output_real_matrix(const gsl_matrix_complex * m, const char* filename);
+void output_reciprocal_matrix(const gsl_matrix_complex * m, const char* filename);

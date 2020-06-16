@@ -16,11 +16,12 @@ public:
 	GComplex& operator*=(double x);
 	GComplex& operator+=(GComplex&& a);
 	GComplex& operator+=(gsl_complex&& a);
-	GComplex& operator-=(GComplex&& a);
+	GComplex& operator-=(const GComplex& a);
 	GComplex operator+(const GComplex& a)const;
 	GComplex operator-(const GComplex& a)const;
 	GComplex operator-()const;
 	GComplex operator/(double x)const;
+	GComplex& operator=(const GComplex& g);
 	inline double real()const { return GSL_REAL(c); }
 	inline double imag()const { return GSL_IMAG(c); }
 	inline double abs()const { return sqrt(abs_square()); }

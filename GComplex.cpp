@@ -48,7 +48,7 @@ GComplex& GComplex::operator+=(gsl_complex&& a)
 	return *this;
 }
 
-GComplex& GComplex::operator-=(GComplex&& a)
+GComplex& GComplex::operator-=(const GComplex& a)
 {
 	c.dat[0] -= a.real();
 	c.dat[1] -= a.imag();
@@ -73,6 +73,13 @@ GComplex GComplex::operator-() const
 GComplex GComplex::operator/(double x) const
 {
 	return GComplex(real() / x, imag() / x);
+}
+
+GComplex& GComplex::operator=(const GComplex& g)
+{
+	c.dat[0] = g.real();
+	c.dat[1] = g.imag();
+	return *this;
 }
 
 std::ostream& operator<<(std::ostream& out, const GComplex& g)

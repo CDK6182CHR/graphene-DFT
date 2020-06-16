@@ -24,6 +24,9 @@ gsl_matrix_complex* aKhs = gsl_matrix_complex_alloc(NSet, NSet);//特征向量，一列
 void init_density()
 {
 	gsl_matrix_complex_set_identity(aKhs);
+	//for (int i = 0; i < RCount; i++)
+	//	for (int j = 0; j < RCount; j++)
+	//		gsl_matrix_set(density, i, j, NValence / Omega * RCount * RCount);
 }
 
 bool solve_k(const GVector2D& k)
@@ -31,9 +34,8 @@ bool solve_k(const GVector2D& k)
 	//init_density();  //for test
 	cout << "Computing for k point " << k << endl;
 	cal_k_consts(k);
-	construct_S(k);  //这是k点常量
 	double Ecur = 0;  //当前状态能量
-	double En = cal_density(k,0);
+	double En = 0;
 	cout << "------------------------------------------" << endl;
 	cout << "Step\t\ttotE" << endl;
 	int step = 0;
@@ -65,9 +67,11 @@ void construct_H(const GVector2D& k)
 	cout << "\t\t\t\tV_0=" << V0 << endl;
 	for (int i = 0; i < NSet; i++) {
 		double h = (k + Khs[i]).square() * hbar_2me+V0;
+		//cout << "V0=" << V0 << endl;
+		//cout << "T+V0=" << h << endl;
 		for (int c = 0; c < NInnerOrbit; c++) {
 			const GComplex* kpsi = kpsi_all[c];
-			//h -= kpsi[i].abs_square() * Ec_all[c];
+			h -= kpsi[i].abs_square() * Ec_all[c];
 		}
 		gsl_matrix_complex_set(H, i, i, gsl_complex_rect(h,0));
 	}
@@ -76,10 +80,14 @@ void construct_H(const GVector2D& k)
 		for (int j = i + 1; j < NSet; j++) {
 			const GVector2D& Kh = Khs[i], Kh1 = Khs[j];
 			GComplex h = V_FT(Kh - Kh1);
+			//cout << "V_Kh=" << h << endl;
 			for (int c = 0; c < NInnerOrbit; c++) {
 				const GComplex* kpsi = kpsi_all[c];
-				//h -= kpsi[i] * kpsi[j].conj() * Ec_all[c];
+				const GComplex& vps=kpsi[i] * kpsi[j].conj() * Ec_all[c];
+				h -= vps;
+				//cout << "V_PS=" << vps << endl;
 			}
+			
 			gsl_matrix_complex_set(H, i, j, h);
 			gsl_matrix_complex_set(H, j, i, h.conj());
 		}
@@ -88,6 +96,7 @@ void construct_H(const GVector2D& k)
 
 //此前密度应该已经算好
 //暂定用0阶代数精度数值积分方法
+//todo: 乘不乘密度？？
 void construct_Vr()
 {
 	gsl_matrix_complex_set_zero(Vr);
@@ -97,6 +106,7 @@ void construct_Vr()
 			double vee = 0;  //电子互作用势能
 			GComplex vext = 0;  //电子离子互作用势能
 			const double p = gsl_matrix_get(density, i, j);
+			const GVector2D r = directPos(i, j);
 			for (int a = 0; a < RCount; a++) {
 				for (int b = 0; b < RCount; b++) {
 					const double p1 = gsl_matrix_get(density, a, b);
@@ -105,14 +115,17 @@ void construct_Vr()
 					}
 				}
 			}
-			vee *= p*Omega / (RCount * RCount-1);//电子互作用能应该还要算上当前位置的密度
-			GVector2D r = directPos(i, j);
+			//vee要除以2，电子互作用能为一对电子所共有
+			vee *= e2k*Omega / (RCount * RCount-1)/2;//电子互作用能应该还要算上当前位置的密度
 			//vext += VExtLocal(dis(r1, i, j),p);
 			//vext += VExtLocal(dis(r2, i, j),p);
-			vext += Veff1(i, j, p);
-			vext += Veff2(i, j, p);
+			vext += Veff1(i, j, 1);
+			vext += Veff2(i, j, 1);
 			//vext *= Omega / RCount / RCount;  //并没有做数值积分！不要归一化。
-			v = vext + VLDA(p) + e2k * vee;
+			v = vext + VLDA(p) + vee;
+			//cout << "vext=" << vext << endl << "VLDA=" << VLDA(p) << endl << "vee=" << vee << endl;
+			//v = vext + VLDA(p);  //单电子近似
+			//v = vext  + e2k * vee;  //Hatree近似
 			gsl_matrix_complex_set(Vr, i, j, v);
 		}
 	}
@@ -134,15 +147,15 @@ double VExtLocal(double r,double p)
 GComplex Veff1(int a, int b,double p)
 {
 	double r = dis(r1, a, b);
-	//return GComplex(-p * e2k * Z / r,0);
+	return GComplex(-p * e2k * Z / r,0);
 	//return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
-	return GComplex(-p * N*e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
+	return GComplex(-p * N * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
 }
 
 GComplex Veff1_debug(int a, int b, double p)
 {
 	double r = dis(r1, a, b);
-	return GComplex(-p * N*e2k * Z / r,0);
+	//return GComplex(-p * N*e2k * Z / r,0);
 	//return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
 	return GComplex(-p * N*e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
 }
@@ -150,12 +163,14 @@ GComplex Veff1_debug(int a, int b, double p)
 GComplex Veff2(int a, int b,double p)
 {
 	double r = dis(r2, a, b);
+	return GComplex(-p * e2k * Z / r);
 	return GComplex(-p * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s2, a, b);
 }
 
 //本函数只叠加上指定能带的电子密度，默认自旋简并，即两个价电子。
 void cal_density_single(const GVector2D& k, int n)
 {
+	//static gsl_matrix* single_density = gsl_matrix_alloc(RCount, RCount);
 	for (int i = 0; i < RCount; i++) {
 		for (int j = 0; j < RCount; j++) {
 			GComplex psi(0);  //波函数在这个点的取值
@@ -172,7 +187,8 @@ void cal_density_single(const GVector2D& k, int n)
 						gsl_complex_conjugate(kpsi_c[m]);
 				}
 			}
-			gsl_matrix_set(density, i, j, 2*psi.abs()+gsl_matrix_get(density,i,j));
+			double sq = psi.abs_square();
+			gsl_matrix_set(density,i,j,sq+gsl_matrix_get(density,i,j));
 		}
 	}
 }
@@ -198,12 +214,12 @@ double cal_density(const GVector2D& k,int step)
 		Etot += 2 * Ei;
 		cal_density_single(k, i);
 	}
-	//static const double rate = 0.50;
+	static const double rate = 1.00;
 	static gsl_rng* r = gsl_rng_alloc(gsl_rng_mt19937);
 	//unsigned long int Seed = 23410981;
 	//gsl_rng_set(r, Seed);
 	if (step > 6) {
-		double rate = gsl_rng_uniform(r) * 0.7 + 0.3;
+		//double rate = gsl_rng_uniform(r) * 0.7 + 0.3;
 		//double rate = 1.0;
 		//cout << "rate=" << rate << endl;
 		for (int i = 0; i < NSet; i++)
@@ -211,31 +227,47 @@ double cal_density(const GVector2D& k,int step)
 				gsl_matrix_set(density, i, j,
 					(rate*gsl_matrix_get(density, i, j) + (1-rate)*gsl_matrix_get(temp, i, j)));
 	}
+	norm_density();
+	//////////////////
+	double tot=0;
+	for (int i = 0; i < RCount; i++)
+		for (int j = 0; j < RCount; j++)
+			tot += gsl_matrix_get(density, i, j);
+	tot *= Omega / RCount / RCount;
+	//cout << "totDensity: " << tot << endl;
+	//////////////////
 	return Etot;
 }
 
+//double VLDA(double p)
+//{
+//	//return 0;//todo 暂时忽略掉交换关联能，按照Hatree近似
+//	static const double AA = -0.9164, BB = -0.2846, CC = 1.0529, DD = 0.3334,
+//		FF = -0.096, GG = 0.0622, HH = -0.00232, JJ = 0.004;//CA-LDA常数
+//	double rs = pow(3 / (4 * M_PI * p), 1.0 / 3)*1e10;//按照Angstrom单位
+//	double res = AA / rs;
+//	if (rs >= 1) {
+//		res += BB / (1 + CC * sqrt(rs) + DD * rs);
+//	}
+//	else {
+//		res += FF + GG * log(rs) * HH * log(rs) + JJ * rs * log(rs);
+//	}
+//	double dif = -AA / rs / rs;  //这是对rs的导数部分
+//	if (rs >= 1) {
+//		dif -= BB / pow(1 + CC * sqrt(rs) + DD * rs, 2.0) * (CC / (2 * sqrt(rs) + DD));
+//	}
+//	else {
+//		dif += GG / rs + HH + JJ * log(rs) + JJ;
+//	}
+//	res -= dif * pow(3.0 / (4 * M_PI), 1.0 / 3) * pow(p, -4.0 / 3) / 3.0;
+//	return res*e;//按照电子伏特为单位处理
+//}
+
 double VLDA(double p)
 {
-	//return 0;//todo 暂时忽略掉交换关联能，按照Hatree近似
-	static const double AA = -0.9164, BB = -0.2846, CC = 1.0529, DD = 0.3334,
-		FF = -0.096, GG = 0.0622, HH = -0.00232, JJ = 0.004;//CA-LDA常数
-	double rs = pow(3 / (4 * M_PI * p), 1.0 / 3)*1e10;//按照Angstrom单位
-	double res = AA / rs;
-	if (rs >= 1) {
-		res += BB / (1 + CC * sqrt(rs) + DD * rs);
-	}
-	else {
-		res += FF + GG * log(rs) * HH * log(rs) + JJ * rs * log(rs);
-	}
-	double dif = -AA / rs / rs;  //这是对rs的导数部分
-	if (rs >= 1) {
-		dif -= BB / pow(1 + CC * sqrt(rs) + DD * rs, 2.0) * (CC / (2 * sqrt(rs) + DD));
-	}
-	else {
-		dif += GG / rs + HH + JJ * log(rs) + JJ;
-	}
-	res -= dif * pow(3.0 / (4 * M_PI), 1.0 / 3) * pow(p, -4.0 / 3) / 3.0;
-	return res*e;//按照电子伏特为单位处理
+	//注意为了量纲问题，改了参数。
+	static const double AA = -  e * e / (M_PI) * pow(3 * M_PI * M_PI, 1.0 / 2);
+	return AA * sqrt(p);
 }
 
 GComplex V_FT(const GVector2D& Kh)
@@ -244,11 +276,13 @@ GComplex V_FT(const GVector2D& Kh)
 	for (int i = 0; i < RCount; i++) {
 		for (int j = 0; j < RCount; j++) {
 			GVector2D r = directPos(i, j);
+			double p = gsl_matrix_get(density, i, j);
 			res += GComplex(gsl_matrix_complex_get(Vr, i, j)) * gsl_complex_exp(
-				gsl_complex_rect(0,-(Kh * r)));
+				gsl_complex_rect(0, -(Kh * r)));
+				//密度放到这里？
 		}
 	}
-	return res / RCount/RCount;
+	return res / RCount/RCount;//按量纲分析似乎应该乘上元胞体积才是能量
 }
 
 //一次求解久期方程过程的封装。S,H都已经计算好。
@@ -261,4 +295,22 @@ void solve_single_secular(const GVector2D& k)
 	//C=Sinv*H
 	static gsl_eigen_hermv_workspace* ws = gsl_eigen_hermv_alloc(NSet);
 	gsl_eigen_hermv(C, Ek, aKhs, ws);//特征向量正交且归一，和Ek中的顺序一一对应
+}
+
+void norm_density()
+{
+	double tot = 0;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			tot += gsl_matrix_get(density, i, j);
+		}
+	}
+	tot *= Omega / RCount / RCount;
+	//cout << "norm: tot=" << tot << endl;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			double p = gsl_matrix_get(density, i, j) / tot;
+			gsl_matrix_set(density, i, j, NValence * p);
+		}
+	}
 }
