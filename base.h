@@ -43,10 +43,10 @@ extern GVector2D* Khs;  //所有要考虑的倒空间格点
 extern const gsl_matrix* phi_1s1, * phi_1s2, * phi_2s1, * phi_2s2; //局域芯电子波函数打表
 
 #define KPOINTS 4  //倒空间路径结点数
-
-
-
 extern const GVector2D KPath[KPOINTS];
+
+#define NNeigh 8
+extern const GVector2D neigh[NNeigh];  //近邻矩阵
 
 double phi_1s(double r);  //1s轨道波函数，各向同性
 double phi_2s(double r);  //2s轨道波函数，各向同性

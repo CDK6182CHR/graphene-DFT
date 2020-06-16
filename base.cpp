@@ -7,34 +7,6 @@
 #include"GComplex.h"
 using namespace std;
 
-//inline gsl_vector* _vec_init(int flag) {
-//	gsl_vector* v = gsl_vector_alloc(2);
-//	switch (flag)
-//	{
-//	case 1:
-//		gsl_vector_set(v, 0, sqrt(3) * A0 / 2);
-//		gsl_vector_set(v, 1, A0 / 2); break;
-//	case 2:
-//		gsl_vector_set(v, 0, sqrt(3) * A0 / 2);
-//		gsl_vector_set(v, 1, -A0 / 2); break;
-//	case 3:
-//		gsl_vector_set(v, 0, 2 * M_PI / A0 / sqrt(3));
-//		gsl_vector_set(v, 1, 2 * M_PI / A0); break;
-//	case 4:
-//		gsl_vector_set(v, 0, 2 * M_PI / A0 / sqrt(3));
-//		gsl_vector_set(v, 1, -2 * M_PI / A0); break;
-//	case 5:
-//		gsl_vector_set(v, 0, 0);
-//		gsl_vector_set(v, 1, 0); break;
-//	case 6:
-//		gsl_vector_set(v, 0, A0 / sqrt(3));
-//		gsl_vector_set(v, 1, 0); break;
-//	default:
-//		break;
-//	}
-//	return v;
-//}
-
 const GVector2D A1(sqrt(3)* A0 / 2, A0 / 2);
 const GVector2D A2(sqrt(3)* A0 / 2, -A0 / 2);
 const GVector2D B1(2 * M_PI / sqrt(3) / A0, 2 * M_PI / A0);
@@ -62,18 +34,22 @@ const double e2k = e * e / (4 * M_PI * GSL_CONST_MKSA_VACUUM_PERMITTIVITY);  //e
 
 const int Z = 4;
 
-inline int _cal_N();
 inline int _cal_N_set();
 //计算参数
 //const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
-const double KCut=6e10;//平面波截断半径，决定基组数目
+const double KCut=8e10;//平面波截断半径，决定基组数目
 const double prec = 1e-6; //收敛相对误差判据
 const int MaxStep = 20;  //最大迭代步数
 const int LCount = 20;
 const int N = LCount * LCount;//晶胞数量
-const int KCount=15;//1BZ高对称点路径每段折线的K点数目
+const int KCount=10;//1BZ高对称点路径每段折线的K点数目
 const int RCount=40;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
+
+
+const GVector2D neigh[NNeigh] = {
+	A1,-A1,A2,-A2,A1 + A2,A1 - A2,A2 - A1,-A1 - A2
+};
 
 const GVector2D KPath[KPOINTS] = {
 	GVector2D(0,4 * M_PI / 3 / A0),  //K
@@ -197,10 +173,6 @@ GVector2D directPos(int a, int b)
 //效率比较低！
 double dis(const GVector2D& center, int a1, int a2)
 {
-	static const constexpr int NNeigh = 8;
-	static const GVector2D neigh[NNeigh] = {
-		A1,-A1,A2,-A2,A1 + A2,A1 - A2,A2 - A1,-A1 - A2
-	};
 	GVector2D r = directPos(a1, a2);
 	double q = r.dis(center);
 	for (int i = 0; i < NNeigh; i++) {

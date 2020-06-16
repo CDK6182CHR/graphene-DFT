@@ -27,6 +27,8 @@ public:
 	inline double abs()const { return sqrt(abs_square()); }
 	inline double abs_square()const { return real() * real() + imag() * imag(); }
 	inline GComplex conj()const { return GComplex(real(), -imag()); }
+	inline bool notZero()const { return real() || imag(); }
+	//不可重载bool转换，否则造成多处【运算】有歧义。bool也是数值类型！
 };
 
 std::ostream& operator<<(std::ostream& out, const GComplex& g);

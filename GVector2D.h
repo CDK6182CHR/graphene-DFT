@@ -37,6 +37,9 @@ public:
 	inline bool operator!=(const GVector2D& g)const {
 		return x() != g.x() || y() != g.y();
 	}
+	inline bool notZero()const {
+		return x() || y();
+	}
 	~GVector2D();
 };
 

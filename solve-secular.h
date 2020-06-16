@@ -10,6 +10,8 @@ extern gsl_matrix_complex* H;  //Hamiltonian矩阵
 extern gsl_vector* Ek;  //当前求解的本征值
 extern gsl_matrix_complex* aKhs;
 
+extern double V0;  //平均势能
+
 void init_density();  //程序初始化调用一次，构建初始密度
 bool solve_k(const GVector2D& k);  //迭代解决k点的问题。结果存入Ek。返回是否收敛
 
@@ -19,9 +21,10 @@ void construct_Vr();
 
 double cal_density(const GVector2D& k,int step);//计算电子密度，并返回总能量
 
-double VExtLocal(double r, double p);
-GComplex Veff1(int a, int b, double p); 
-GComplex Veff2(int a, int b, double p);
+double Vext(const GVector2D& r0, int a, int b);
+inline GComplex Veff1(int a, int b, double p); 
+inline GComplex Veff2(int a, int b, double p);
+double Vee(int a, int b);
 
 void cal_density_single(const GVector2D& k,int n);//计算一条能带上对应电子的能量。n: 特征值编号
 

@@ -21,6 +21,8 @@ gsl_vector* Ek = gsl_vector_alloc(NSet);
 //gsl_vector* Ek_sorted = gsl_vector_alloc(NSet);//经过排序的特征值
 gsl_matrix_complex* aKhs = gsl_matrix_complex_alloc(NSet, NSet);//特征向量，一列一个
 
+double V0;  //平均势能
+
 void init_density()
 {
 	gsl_matrix_complex_set_identity(aKhs);
@@ -63,7 +65,7 @@ void construct_H(const GVector2D& k)
 {
 	gsl_matrix_complex_set_zero(H);
 	//先构造对角元
-	double V0 = V_FT(GVector2D(0, 0)).real();
+	V0 = V_FT(GVector2D(0, 0)).real();
 	cout << "\t\t\t\tV_0=" << V0 << endl;
 	for (int i = 0; i < NSet; i++) {
 		double h = (k + Khs[i]).square() * hbar_2me+V0;
@@ -96,7 +98,6 @@ void construct_H(const GVector2D& k)
 
 //此前密度应该已经算好
 //暂定用0阶代数精度数值积分方法
-//todo: 乘不乘密度？？
 void construct_Vr()
 {
 	gsl_matrix_complex_set_zero(Vr);
@@ -107,16 +108,8 @@ void construct_Vr()
 			GComplex vext = 0;  //电子离子互作用势能
 			const double p = gsl_matrix_get(density, i, j);
 			const GVector2D r = directPos(i, j);
-			for (int a = 0; a < RCount; a++) {
-				for (int b = 0; b < RCount; b++) {
-					const double p1 = gsl_matrix_get(density, a, b);
-					if (i != a || j != b) {
-						vee += p1 / (dis(i, j, a, b));
-					}
-				}
-			}
 			//vee要除以2，电子互作用能为一对电子所共有
-			vee *= e2k*Omega / (RCount * RCount-1)/2;//电子互作用能应该还要算上当前位置的密度
+			vee = Vee(i, j);//电子互作用能应该还要算上当前位置的密度
 			//vext += VExtLocal(dis(r1, i, j),p);
 			//vext += VExtLocal(dis(r2, i, j),p);
 			vext += Veff1(i, j, 1);
@@ -131,40 +124,66 @@ void construct_Vr()
 	}
 }
 
-//离子势能
-double VExtLocal(double r,double p)
+//离子势能。考虑最近邻元胞积分
+double Vext(const GVector2D& r0,int a,int b)
 {
-	static const double rc = A0 / 10;
-	static const double AInner = 1.0 / rc;
-	/*if (r > rc)
-		return 1.0 / r;
-	else
-		return AInner;*/
-	return -p*e2k * Z / r;
+	static const double c0 = 7.4658;
+	GVector2D&& r = directPos(a, b);
+	double res = 1.0 / r.dis(r0);
+	//for (int i = 0; i < NNeigh; i++) {
+	//	const GVector2D& Rl = neigh[i];
+	//	res += 1.0 / r.dis(r0 + Rl);
+	//}
+	res += c0 * LCount / A0;
+	return res;
 }
 
 //以r1离子为中心的有效离子势能计算，包含赝势的抵扣部分。
-GComplex Veff1(int a, int b,double p)
+inline GComplex Veff1(int a, int b,double p)
 {
-	double r = dis(r1, a, b);
-	return GComplex(-p * e2k * Z / r,0);
+	double d = Vext(r1, a, b);
+	return GComplex(- e2k * Z *d,0);
 	//return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
-	return GComplex(-p * N * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
+	//return GComplex(-N * e2k * Z / r) -gsl_matrix_complex_get(Vopw_1s1, a, b);
 }
 
 GComplex Veff1_debug(int a, int b, double p)
 {
 	double r = dis(r1, a, b);
-	//return GComplex(-p * N*e2k * Z / r,0);
+	return GComplex(-N*e2k * Z / r,0);
 	//return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
-	return GComplex(-p * N*e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
+	//return GComplex(- N*e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s1, a, b);
 }
 
-GComplex Veff2(int a, int b,double p)
+inline GComplex Veff2(int a, int b,double p)
 {
-	double r = dis(r2, a, b);
-	return GComplex(-p * e2k * Z / r);
-	return GComplex(-p * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s2, a, b);
+	double d = Vext(r2, a, b);
+	return GComplex(- e2k * Z *d);
+	//return GComplex(-p * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s2, a, b);
+}
+
+//电子互作用势能，需遍历积分. 返回最后的Vee
+double Vee(int a, int b)
+{
+	double res = 0;
+	const GVector2D&& r = directPos(a, b);
+	static const double c0 = 7.4658;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			if (i != a || j != b) {
+				const GVector2D&& r1 = directPos(i, j);  //r'
+				double&& p = gsl_matrix_get(density, i, j);//这是实空间周期函数
+				double v = 1.0 / r.dis(r1);
+				//for (int l = 0; l < NNeigh; l++) {
+				//	const GVector2D& Rl = neigh[l];
+				//	v += 1.0 / r.dis(r1 + Rl);
+				//}
+				v += 7.4657 * LCount / A0;
+				res += v * p;
+			}
+		}
+	}
+	return res * Omega / RCount / RCount * e2k / 2;
 }
 
 //本函数只叠加上指定能带的电子密度，默认自旋简并，即两个价电子。
@@ -273,16 +292,22 @@ double VLDA(double p)
 GComplex V_FT(const GVector2D& Kh)
 {
 	GComplex res(0);
+	
 	for (int i = 0; i < RCount; i++) {
 		for (int j = 0; j < RCount; j++) {
 			GVector2D r = directPos(i, j);
 			double p = gsl_matrix_get(density, i, j);
-			res += GComplex(gsl_matrix_complex_get(Vr, i, j)) * gsl_complex_exp(
+			GComplex v = gsl_matrix_complex_get(Vr, i, j);
+			//if (Kh.notZero())
+			//	v -= V0;//扣去平均势能
+			res += GComplex(v) * gsl_complex_exp(
 				gsl_complex_rect(0, -(Kh * r)));
-				//密度放到这里？
 		}
 	}
-	return res / RCount/RCount;//按量纲分析似乎应该乘上元胞体积才是能量
+	//if (!Kh.notZero()) {
+	//	cout << "Calculating V0 " << res << endl;
+	//}
+	return res / RCount/RCount;
 }
 
 //一次求解久期方程过程的封装。S,H都已经计算好。
