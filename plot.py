@@ -5,11 +5,12 @@ path_file = r'KPATH.txt'
 
 K_names = ['K','G','M','K']
 #K_names = ['G','M','K','G']
-excludes = [8,11,16]
+excludes = [6,14]
 
 excludes = []
 
-e=1.602e-19
+e=1.602176487e-19
+E0 = -3635  # 零点能量，按电子伏特
 
 with open(eig_file,'r') as fp:
     data = list(map(lambda line:list(map(float,line.split())),
@@ -21,13 +22,14 @@ print(len(ks))
 print("Excludes: ",excludes)
 
 Es = list(map(list,trans[1:]))
-Emin=min(map(min,Es))
-Emax=max(map(max,Es))
 
 for i in sorted(excludes,reverse=True):
     del ks[i]
     for E in Es:
         del E[i]
+
+
+
 
 with open(path_file,'r') as fp:
     k_dots = list(map(lambda line:float(line.split()[0]),
@@ -36,13 +38,21 @@ with open(path_file,'r') as fp:
 assert len(k_dots)==len(K_names)
 
 for E in Es:
-    plt.plot(ks,[Ei/e for Ei in E],'b')
-    plt.plot(ks,[Ei/e for Ei in E],'b.')
+    for i in range(len(E)):
+        E[i]=E[i]/e-E0
+
+Emin=min(map(min,Es))
+Emax=max(map(max,Es))
 
 for k in k_dots:
-    plt.plot([k,k],[Emin/e,Emax/e])
-plt.plot([k_dots[0],k_dots[-1]],[0,0])
+    plt.plot([k,k],[Emin-100,Emax],'k')
+plt.plot([k_dots[0],k_dots[-1]],[0,0],'--')
 #plt.ylim((-100,200))
 
+for E in Es:
+    plt.plot(ks,[Ei for Ei in E],'b')
+    plt.plot(ks,[Ei for Ei in E],'b.')
+
 plt.xticks(ticks=k_dots,labels=K_names)
+plt.ylabel('E (eV)')
 plt.show()

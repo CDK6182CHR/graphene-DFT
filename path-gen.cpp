@@ -32,7 +32,7 @@ void process_path()
 				cout << endl;
 			}
 			k += dk;
-			x += dk.abs();
+			x += 1;
 		}
 
 			

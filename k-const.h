@@ -23,6 +23,7 @@ void cal_k_consts(const GVector2D& k);
 void cal_psi_c(
 	const GVector2D& k,
 	gsl_matrix_complex* psic,
+	const gsl_matrix* phic,  //打表
 	std::function<double(double)> phi,
 	const GVector2D& r0,
 	const GComplex& A
@@ -31,6 +32,10 @@ void cal_psi_c(
 GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh, 
 	const gsl_matrix_complex* psic, const gsl_matrix* phic,const GComplex& A);
 
+//运用数值积分手段算
+GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh,
+	std::function<double(double)> phi, const GVector2D& r0);
+
 //计算k点对应的所有Kh的 <k+Kh | psi_c>
 void cal_k_psi_c(
 	const GVector2D& k,
@@ -38,6 +43,14 @@ void cal_k_psi_c(
 	const gsl_matrix_complex* psic,//psi_c 芯电子波函数
 	const gsl_matrix* phic,  //phi_c 局域芯电子波函数
 	const GComplex& A
+	);
+
+//用数值积分方法计算所有Kh的 <k+Kh | psi_c>
+void cal_k_psi_c(
+	const GVector2D& k,
+	GComplex* kpsi,
+	const std::function<double(double)>& phi,
+	const GVector2D& r0
 	);
 
 void construct_S(const GVector2D& k);

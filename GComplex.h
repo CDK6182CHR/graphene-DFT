@@ -29,6 +29,7 @@ public:
 	inline GComplex conj()const { return GComplex(real(), -imag()); }
 	inline bool notZero()const { return real() || imag(); }
 	//不可重载bool转换，否则造成多处【运算】有歧义。bool也是数值类型！
+	GComplex reciprocal()const;//倒数
 };
 
 std::ostream& operator<<(std::ostream& out, const GComplex& g);

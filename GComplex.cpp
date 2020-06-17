@@ -82,6 +82,11 @@ GComplex& GComplex::operator=(const GComplex& g)
 	return *this;
 }
 
+GComplex GComplex::reciprocal() const
+{
+	return gsl_complex_div(gsl_complex_rect(1, 0), c);
+}
+
 std::ostream& operator<<(std::ostream& out, const GComplex& g)
 {
 	out << "GComplex(" << g.real() << ", " << g.imag() << ')';

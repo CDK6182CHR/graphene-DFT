@@ -9,12 +9,14 @@
 #include "solve-secular.h"
 #include "path-gen.h"
 #include<gsl/gsl_errno.h>
-
+#include "integration.h"
+#include<gsl/gsl_math.h>
 
 using namespace std;
 
-int main1()
+int mai1n()
 {
+	//cout << simpson_complex([](double x) {return x*x; }, 0, 1, 1000) << endl;
 	GVector2D k(0, 0);
 	init_density();
 	cal_k_consts(k);
@@ -31,7 +33,7 @@ int main1()
 	output_real_matrix(phi_1s1, "phi_1s1.dat");
 	output_real_matrix(Vr, "Vr.dat");
 	for (int i = 0; i < NSet; i++)
-		cout << kpsi_1s1[i] << endl;
+		cout << kpsi_1s1[i] << '\t' << kpsi_1s2[i] << endl;
 	cout << "Int of psi_c" << endl;
 	double x = 0;
 	for (int i = 0; i < RCount; i++)
@@ -70,13 +72,8 @@ int main()
 	cout << "Nset=" << NSet << endl;
 	cout << "RCount=" << RCount << endl;
 	cout << "KCount=" << KCount << endl;
+	cout << "E1s=" << E1s << endl;
 	init_density();
-	/*GVector2D k;
-	k = (B1 * 0.2) + (B2 * 0.3);
-	solve_k(k);
-	for (int i = 0; i < NSet; i++) {
-		cout << "E[" << i << "]=" << gsl_vector_get(Ek, i) << endl;
-	}*/
 	process_path();
 	output_real_matrix(psi_1s1, "psi_1s1.dat");
 	output_real_matrix(psi_1s2, "psi_1s2.dat");

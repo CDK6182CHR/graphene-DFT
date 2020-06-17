@@ -20,10 +20,11 @@ const double me=GSL_CONST_MKSA_MASS_ELECTRON;//电子质量
 const double hbar_2me = hbar * hbar / (2 * me);
 
 const double A0=2.46e-10;//正空间晶格常数
+const double A0z = 1;  //z方向虚拟的晶格常数，归一化时候用
 const double Omega = sqrt(3) * A0 * A0 / 2;
 
-const double E1s = -13.6 * GSL_CONST_MKSA_ELECTRON_CHARGE;
-const double E2s = -3.4 * GSL_CONST_MKSA_ELECTRON_CHARGE;
+const double E1s = -me * pow(6 * e2k, 2) / (2 * hbar * hbar * 0.25);  //二维能量本征值
+//const double E2s = -3.4 * GSL_CONST_MKSA_ELECTRON_CHARGE;
 const double Ec_all[NInnerOrbit] = { 
 	E1s,E1s,
 	//E2s,E2s 
@@ -37,13 +38,14 @@ const int Z = 4;
 inline int _cal_N_set();
 //计算参数
 //const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
-const double KCut=8e10;//平面波截断半径，决定基组数目
-const double prec = 1e-6; //收敛相对误差判据
-const int MaxStep = 20;  //最大迭代步数
-const int LCount = 20;
+const double KCut=12e10;//平面波截断半径，决定基组数目
+const double prec = 1e-11; //收敛相对误差判据
+const int MaxStep = 100;  //最大迭代步数
+const int LHalfCount = 10;
+const int LCount = 2 * LHalfCount + 1;
 const int N = LCount * LCount;//晶胞数量
-const int KCount=10;//1BZ高对称点路径每段折线的K点数目
-const int RCount=40;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
+const int KCount=16;//1BZ高对称点路径每段折线的K点数目
+const int RCount=60;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
 
 
@@ -86,6 +88,7 @@ GVector2D* Khs;
 //	return cnt;
 //}
 
+
 inline int _cal_N_set() {
 	const int NX = KCut *0.5*A0/M_PI;//最大的查找范围
 	cout << "Nx=" << NX << endl;
@@ -118,8 +121,12 @@ const gsl_matrix* _init_phi_table(function<double(double)> phi,
 	gsl_matrix* m = gsl_matrix_alloc(RCount, RCount);
 	for (int a = 0; a < RCount; a++) {
 		for (int b = 0; b < RCount; b++) {
-			double r = dis(r0, a, b);
-			gsl_matrix_set(m, a, b, phi(r));
+			const GVector2D&& r = directPos(a, b);
+			double s = phi(r.dis(r0));
+			for (int i = 0; i < NNeigh; i++) {
+				s += phi(r.dis(r0 + neigh[i]));
+			}
+			gsl_matrix_set(m, a, b, s);
 		}
 	}
 	return m;
@@ -133,9 +140,11 @@ const gsl_matrix
 
 double phi_1s(double r)
 {
-	static const double aa = pow(ABohr, -1.5) / sqrt(M_PI);
-	return aa * exp(-r / ABohr);
-	//return r;
+	//static const double aa = pow(ABohr, -1.5) / sqrt(M_PI);
+	//return aa * exp(-r / ABohr);
+	//按二维的波函数
+	static const double aa = 4.0 / ABohr / sqrt(2 * M_PI);
+	return aa * exp(-2 * r / ABohr);
 }
 
 double phi_2s(double r)
@@ -195,6 +204,15 @@ double dis(int a1, int b1, int a2, int b2)
 	return sqrt(dx * dx + dy * dy);
 }
 
+double simpleDis(const GVector2D& center, int a1, int a2)
+{
+	double x = ((a1 + 0.5) * A1.x() + (a2 + 0.5) * A2.x()) / RCount;
+	double y = ((0.5 + a1) * A1.y() + (0.5 + a2) * A2.y()) / RCount;
+	double dx = x - center.x();
+	double dy = y - center.y();
+	return sqrt(dx * dx + dy * dy);
+}
+
 void output_real_matrix(const gsl_matrix* m, const char* filename)
 {
 	OPEN(fp, filename, "wb");
@@ -234,3 +252,52 @@ void output_reciprocal_matrix(const gsl_matrix_complex* m, const char* filename)
 	}
 	sf.close();
 }
+
+//计算离子势能
+//如果效率许可，就直接用矢量运算
+gsl_matrix* _init_Vext(const GVector2D& r0)
+{
+	gsl_matrix* m = gsl_matrix_alloc(RCount, RCount);
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			const GVector2D&& r = directPos(i, j);
+			const GVector2D&& t = r0 - r;
+			double s = 0;
+			for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
+				for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
+					const GVector2D&& Rl = A1 * l1 + A2 * l2;
+					s += 1.0 / r.dis(r0 + Rl);
+				}
+			}
+			gsl_matrix_set(m, i, j, -Z * e2k * s);
+		}
+	}
+	return m;
+}
+
+const gsl_matrix* Vext_1 = _init_Vext(r1), * Vext_2 = _init_Vext(r2);
+
+
+//按差向量为基本，打表所有点对的求和常数
+gsl_matrix* _init_Vee_sum()
+{
+	gsl_matrix* m = gsl_matrix_alloc(2 * RCount - 1, 2 * RCount - 1);
+	for (int a = -RCount + 1; a < RCount; a++) {
+		for (int b = -RCount + 1; b < RCount; b++) {
+			const GVector2D&& t = directPos(a, b);
+			double s = 0;
+			for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
+				for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
+					const GVector2D&& Rl = A1 * l1 + A2 * l2;
+					//全0是对应相同位置且同一个元胞，干脆就不算，当成0处理
+					if(a||b||l1||l2)
+						s += 1.0 / (t + Rl).abs();
+				}
+			}
+			gsl_matrix_set(m, a+RCount-1, b+RCount-1, e2k * Omega * s / RCount / RCount);
+		}
+	}
+	return m;
+}
+
+const gsl_matrix* sum_ee = _init_Vee_sum();

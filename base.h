@@ -18,6 +18,7 @@ extern const double hbar_2me;
 extern const double Omega;//正空间元胞体积（面积）
 
 extern const double A0;//正空间晶格常数
+extern const double A0z;//z方向虚拟晶格常数，只用来处理归一化的问题
 
 extern const double E1s, E2s;  //原子轨道本征能量
 extern const double Ec_all[NInnerOrbit];  //各个原子轨道的能量本征值，按数组形式
@@ -31,7 +32,8 @@ extern const double RCut;//正空间晶格范围，即做FT的积分范围
 extern const double KCut;//平面波截断半径
 extern const double prec; //收敛的相对误差判据
 extern const int MaxStep; //最大迭代步数。超过就判定不收敛
-extern const int LCount;  //沿每个基矢方向的晶胞数量
+extern const int LHalfCount;  //单边元胞数。考察的元胞放在正中间。
+extern const int LCount;  //沿每个基矢方向的晶胞数量。
 extern const int N;//晶胞数量
 extern const int KCount;//1BZ高对称点路径每段折线的K点数目
 extern const int RCount;//正空间划分mesh的密度。将每一条基矢等分成多少段。
@@ -48,6 +50,12 @@ extern const GVector2D KPath[KPOINTS];
 #define NNeigh 8
 extern const GVector2D neigh[NNeigh];  //近邻矩阵
 
+extern const gsl_matrix
+* Vext_1, * Vext_2, //外场势能是个常数
+* sum_ee;  //求和常数打表
+
+
+
 double phi_1s(double r);  //1s轨道波函数，各向同性
 double phi_2s(double r);  //2s轨道波函数，各向同性
 
@@ -56,7 +64,9 @@ double dis(const GVector2D& center, int a1, int a2);
 //center（笛卡尔坐标）到(a1,a2) （分数坐标）的距离
 //必须考虑平移对称性，最近的那个中心的距离。
 
-double dis(int a1, int b1, int a2, int b2);//不考虑平移对称性
+double dis(int a1, int b1, int a2, int b2);//考虑平移对称性
+
+double simpleDis(const GVector2D& center, int a1, int a2);//不考虑平移对称性
 
 #define OPEN(fp, filename, mode)               \
 	FILE *fp;                                  \
@@ -78,3 +88,8 @@ double dis(int a1, int b1, int a2, int b2);//不考虑平移对称性
 void output_real_matrix(const gsl_matrix * m, const char* filename);
 void output_real_matrix(const gsl_matrix_complex * m, const char* filename);
 void output_reciprocal_matrix(const gsl_matrix_complex * m, const char* filename);
+
+inline double Vee_sum_arg(int da, int db)
+{
+	return gsl_matrix_get(sum_ee, da + RCount - 1, db + RCount - 1);
+}

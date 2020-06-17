@@ -19,13 +19,12 @@ void construct_H(const GVector2D& k);
 
 void construct_Vr();
 
-double cal_density(const GVector2D& k,int step);//计算电子密度，并返回总能量
-
 double Vext(const GVector2D& r0, int a, int b);
 inline GComplex Veff1(int a, int b, double p); 
 inline GComplex Veff2(int a, int b, double p);
 double Vee(int a, int b);
 
+double cal_density(const GVector2D& k, int step);//计算电子密度，并返回总能量
 void cal_density_single(const GVector2D& k,int n);//计算一条能带上对应电子的能量。n: 特征值编号
 
 double VLDA(double p);  //LDA交换关联势，作为密度p的泛函

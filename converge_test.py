@@ -4,8 +4,8 @@
 from math import *
 import matplotlib.pyplot as plt
 
-t1 = 0.3
-t2 = 0.2
+t1 = 0.8
+t2 = 0.8
 
 def count(cut,t1,t2):
     s = 0
@@ -16,14 +16,17 @@ def count(cut,t1,t2):
 
 ns = []
 cs = []
-cuts = list(range(100))
+cuts = list(range(10))
 for cut in cuts:
     c = count(cut,t1,t2)
     n = (2*cut+1)**2
     ns.append(n)
     cs.append(c)
+    print(cut,n,c,end=' ')
     if cut:
-        print(cut,n,c,(c-cs[0])/cut)
+        print((c-cs[0])/cut)
+    else:
+        print('')
 
 plt.plot(ns,cs)
 plt.show()
