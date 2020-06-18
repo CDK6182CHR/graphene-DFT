@@ -25,10 +25,10 @@ gsl_matrix_complex* aKhs = gsl_matrix_complex_alloc(NSet, NSet);//特征向量，一列
 
 void init_density()
 {
-	gsl_matrix_complex_set_identity(aKhs);
-	//for (int i = 0; i < RCount; i++)
-	//	for (int j = 0; j < RCount; j++)
-	//		gsl_matrix_set(density, i, j, NValence / Omega * RCount * RCount);
+	//gsl_matrix_complex_set_identity(aKhs);
+	for (int i = 0; i < RCount; i++)
+		for (int j = 0; j < RCount; j++)
+			gsl_matrix_set(density, i, j, NValence / Omega * RCount * RCount);
 }
 
 bool solve_k(const GVector2D& k)
@@ -265,37 +265,41 @@ double cal_density(const GVector2D& k,int step)
 	return Etot;
 }
 
-//double VLDA(double p)
-//{
-//	//return 0;//todo 暂时忽略掉交换关联能，按照Hatree近似
-//	static const double AA = -0.9164, BB = -0.2846, CC = 1.0529, DD = 0.3334,
-//		FF = -0.096, GG = 0.0622, HH = -0.00232, JJ = 0.004;//CA-LDA常数
-//	double rs = pow(3 / (4 * M_PI * p), 1.0 / 3)*1e10;//按照Angstrom单位
-//	double res = AA / rs;
-//	if (rs >= 1) {
-//		res += BB / (1 + CC * sqrt(rs) + DD * rs);
-//	}
-//	else {
-//		res += FF + GG * log(rs) * HH * log(rs) + JJ * rs * log(rs);
-//	}
-//	double dif = -AA / rs / rs;  //这是对rs的导数部分
-//	if (rs >= 1) {
-//		dif -= BB / pow(1 + CC * sqrt(rs) + DD * rs, 2.0) * (CC / (2 * sqrt(rs) + DD));
-//	}
-//	else {
-//		dif += GG / rs + HH + JJ * log(rs) + JJ;
-//	}
-//	res -= dif * pow(3.0 / (4 * M_PI), 1.0 / 3) * pow(p, -4.0 / 3) / 3.0;
-//	return res*e;//按照电子伏特为单位处理
-//}
-
 double VLDA(double p)
 {
-	//注意为了量纲问题，改了参数。
-	//return 0;
-	static const double AA = -  e * e / (M_PI) * pow(3 * M_PI * M_PI, 1.0 / 2);
-	return AA * sqrt(p);
+	//return 0;//todo 暂时忽略掉交换关联能，按照Hatree近似
+	if (p == 0)
+		return 0;
+	static const double AA = -0.9164, BB = -0.2846, CC = 1.0529, DD = 0.3334,
+		FF = -0.096, GG = 0.0622, HH = -0.00232, JJ = 0.004;//CA-LDA常数
+	//double rs = pow(3 / (4 * M_PI * p), 1.0 / 3)*1e10;//按照Angstrom单位
+	static const double KK = pow(9 * M_PI / 4, 1.0 / 3);
+	double rs = KK / (sqrt(2 * M_PI * p))*1e10;
+	double res = AA / rs;
+	if (rs >= 1) {
+		res += BB / (1 + CC * sqrt(rs) + DD * rs);
+	}
+	else {
+		res += FF + GG * log(rs) * HH * log(rs) + JJ * rs * log(rs);
+	}
+	double dif = -AA / rs / rs;  //这是对rs的导数部分
+	if (rs >= 1) {
+		dif -= BB / pow(1 + CC * sqrt(rs) + DD * rs, 2.0) * (CC / (2 * sqrt(rs) + DD));
+	}
+	else {
+		dif += GG / rs + HH + JJ * log(rs) + JJ;
+	}
+	res -= dif * pow(3.0 / (4 * M_PI), 1.0 / 3) * pow(p, -4.0 / 3) / 3.0;
+	return res*e;//按照电子伏特为单位处理
 }
+
+//double VLDA(double p)
+//{
+//	//注意为了量纲问题，改了参数。
+//	//return 0;
+//	static const double AA = -  e * e / (M_PI) * pow(3 * M_PI * M_PI, 1.0 / 2);
+//	return AA * sqrt(p);
+//}
 
 GComplex V_FT(const GVector2D& Kh)
 {

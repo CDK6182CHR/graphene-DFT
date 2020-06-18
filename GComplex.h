@@ -1,6 +1,7 @@
 #pragma once
 #include<gsl/gsl_complex.h>
 #include<gsl/gsl_complex_math.h>
+#include<gsl/gsl_math.h>
 #include<iostream>
 
 class GComplex

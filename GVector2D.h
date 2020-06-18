@@ -3,6 +3,7 @@
 */
 #pragma once
 #include <gsl/gsl_vector.h>
+#include <gsl/gsl_math.h>
 #include<iostream>
 
 class GVector2D

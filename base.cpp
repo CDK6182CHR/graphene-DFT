@@ -33,19 +33,19 @@ const int NValence = 8;//价电子数目
 const double e = GSL_CONST_MKSA_ELECTRON_CHARGE;
 const double e2k = e * e / (4 * M_PI * GSL_CONST_MKSA_VACUUM_PERMITTIVITY);  //e^2/(4 pi epsilon)
 
-const int Z = 4;
+const int Z = 6;
 
 inline int _cal_N_set();
 //计算参数
 //const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
-const double KCut=12e10;//平面波截断半径，决定基组数目
+const double KCut=8e10;//平面波截断半径，决定基组数目
 const double prec = 1e-11; //收敛相对误差判据
 const int MaxStep = 100;  //最大迭代步数
 const int LHalfCount = 10;
 const int LCount = 2 * LHalfCount + 1;
 const int N = LCount * LCount;//晶胞数量
 const int KCount=16;//1BZ高对称点路径每段折线的K点数目
-const int RCount=60;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
+const int RCount=40;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
 
 
@@ -294,7 +294,8 @@ gsl_matrix* _init_Vee_sum()
 						s += 1.0 / (t + Rl).abs();
 				}
 			}
-			gsl_matrix_set(m, a+RCount-1, b+RCount-1, e2k * Omega * s / RCount / RCount);
+			gsl_matrix_set(m, a + RCount - 1, b + RCount - 1,
+				e2k * Omega * s / RCount / RCount / 2);
 		}
 	}
 	return m;

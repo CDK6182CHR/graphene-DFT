@@ -16,7 +16,7 @@ def count(cut,t1,t2):
 
 ns = []
 cs = []
-cuts = list(range(10))
+cuts = list(range(100))
 for cut in cuts:
     c = count(cut,t1,t2)
     n = (2*cut+1)**2
@@ -28,8 +28,11 @@ for cut in cuts:
     else:
         print('')
 
-plt.plot(ns,cs)
-plt.show()
+#plt.plot(ns,cs)
+#plt.show()
 
 plt.plot(cuts,cs)
+plt.plot(cuts,cs,'*')
+plt.xlabel('LHalfCount')
+plt.ylabel('aAj')
 plt.show()
