@@ -34,3 +34,5 @@ GComplex V_FT(const GVector2D& Kh);  //手工数值积分计算FT。返回的是V(Kh)
 void solve_single_secular(const GVector2D& k);
 
 void norm_density();// 对密度做归一化处理
+
+void norm_density_single(gsl_matrix* m, int electrons);

@@ -6,4 +6,3 @@
 
 void process_path();
 
-void process_k(const GVector2D& k);

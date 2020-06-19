@@ -5,7 +5,6 @@ path_file = r'KPATH.txt'
 
 K_names = ['K','G','M','K']
 #K_names = ['G','M','K','G']
-excludes = [6,14]
 
 excludes = []
 

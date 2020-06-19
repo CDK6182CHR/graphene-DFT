@@ -144,7 +144,7 @@ inline GComplex Veff1(int a, int b,double p)
 	//return GComplex(d,0);
 	////return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
 	////return GComplex(-N * e2k * Z / r) -gsl_matrix_complex_get(Vopw_1s1, a, b);
-	return gsl_matrix_get(Vext_1, a, b);
+	return GComplex(gsl_matrix_get(Vext_1, a, b));
 }
 
 GComplex Veff1_debug(int a, int b, double p)
@@ -160,7 +160,7 @@ inline GComplex Veff2(int a, int b,double p)
 	//double d = Vext(r2, a, b);
 	//return GComplex(- e2k * Z *d);
 	////return GComplex(-p * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s2, a, b);
-	return gsl_matrix_get(Vext_2, a, b);
+	return GComplex(gsl_matrix_get(Vext_2, a, b));
 }
 
 //电子互作用势能，需遍历积分. 返回最后的Vee
@@ -193,7 +193,7 @@ double Vee(int a, int b)
 //本函数只叠加上指定能带的电子密度，默认自旋简并，即两个价电子。
 void cal_density_single(const GVector2D& k, int n)
 {
-	//static gsl_matrix* single_density = gsl_matrix_alloc(RCount, RCount);
+	static gsl_matrix* single_density = gsl_matrix_alloc(RCount, RCount);
 	for (int i = 0; i < RCount; i++) {
 		for (int j = 0; j < RCount; j++) {
 			GComplex psi(0);  //波函数在这个点的取值
@@ -211,7 +211,15 @@ void cal_density_single(const GVector2D& k, int n)
 				}
 			}
 			double sq = psi.abs_square();
-			gsl_matrix_set(density,i,j,sq+gsl_matrix_get(density,i,j));
+			//gsl_matrix_set(density,i,j,sq+gsl_matrix_get(density,i,j));
+			gsl_matrix_set(single_density, i, j, sq);
+		}
+	}
+	norm_density_single(single_density, 2);
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			gsl_matrix_set(density, i, j, gsl_matrix_get(density, i, j) +
+				gsl_matrix_get(single_density, i, j));
 		}
 	}
 }
@@ -237,7 +245,7 @@ double cal_density(const GVector2D& k,int step)
 		Etot += 2 * Ei;
 		cal_density_single(k, i);
 	}
-	norm_density();
+	//norm_density();
 	static const double rate = 1.0;
 	static gsl_rng* r = gsl_rng_alloc(gsl_rng_mt19937);
 	//unsigned long int Seed = 23410981;
@@ -251,7 +259,7 @@ double cal_density(const GVector2D& k,int step)
 				gsl_matrix_set(density, i, j,
 					(rate*gsl_matrix_get(density, i, j) + 
 						(1-rate)*gsl_matrix_get(temp, i, j)));
-		norm_density();
+		//norm_density();
 	}
 	
 	//////////////////
@@ -341,6 +349,24 @@ void norm_density()
 		for (int j = 0; j < RCount; j++) {
 			double p = gsl_matrix_get(density, i, j) / tot;
 			gsl_matrix_set(density, i, j, NValence * p);
+		}
+	}
+}
+
+void norm_density_single(gsl_matrix* m,int electrons)
+{
+	double tot = 0;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			tot += gsl_matrix_get(m, i, j);
+		}
+	}
+	tot *= Omega / RCount / RCount;
+	//cout << "norm: tot=" << tot << endl;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			double p = gsl_matrix_get(m, i, j) / tot;
+			gsl_matrix_set(m, i, j, electrons * p);
 		}
 	}
 }

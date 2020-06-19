@@ -19,18 +19,22 @@ def plot(filename,ax,title=""):
     # axes3d = Axes3D(fig)
     # axes3d.plot_surface(range(M),range(N),data)
 
-    ax.imshow(data)
+    # ax.imshow(data)
+    sns.heatmap(data)
     plt.title(title)
     return data
 
 if __name__ == '__main__':
 
-    filename1 = f"density.dat"
+    filename1 = f"Vr.dat"
     fig = plt.figure()
     # ax = fig.add_subplot(121)
     # plot(filename1,ax,"out1")
     ax = fig.add_subplot(111)
-    plot(filename1,ax,filename1)
+    plot(filename1,ax,"")
+
+    plt.xlabel("a1/RCount")
+    plt.ylabel("a2/RCount")
     plt.show()
 
 

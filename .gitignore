@@ -5,3 +5,5 @@ x64
 *.dat
 *.txt
 *.pdf
+*.o
+*.ext

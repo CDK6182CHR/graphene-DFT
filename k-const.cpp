@@ -81,14 +81,22 @@ void cal_psi_c(const GVector2D& k,gsl_matrix_complex* psic, const gsl_matrix* ph
 			//	p += gsl_complex_mul_real(gsl_complex_exp(gsl_complex_rect(0, k * Rls[i])),
 			//		phi(r));
 			//}
+			const GVector2D&& r = directPos(a1, a2);
+			const GVector2D&& t = r0 - r;
+			static const double aa = 4.0 / (ABohr * sqrt(2 * M_PI * N));
 			for (int i = -LHalfCount; i <=LHalfCount; i++) {
 				for (int j = -LHalfCount; j <=LHalfCount; j++) {
 					const GVector2D&& Rl = A1 * i + A2 * j;
-					p += gsl_complex_mul_real(gsl_complex_exp(gsl_complex_rect(0, k * Rl)),
-						gsl_matrix_get(phic, a1, a2));
+					//以下是用打表结果近似计算
+					//p += gsl_complex_mul_real(gsl_complex_exp(gsl_complex_rect(0, k * Rl)),
+					//	gsl_matrix_get(phic, a1, a2));
+					//以下是用函数准确计算，测试效率。注意归一化常数的变化。
+					double d = (Rl + t).abs();
+					p += GComplex(gsl_complex_exp(
+						gsl_complex_rect(0,k * Rl)))*phi(d);
 				}
 			}
-			gsl_matrix_complex_set(psic, a1, a2, p / LCount);
+			gsl_matrix_complex_set(psic, a1, a2, p/LCount);
 		}
 	}
 }
@@ -190,7 +198,8 @@ GComplex Vopw(const GVector2D& k,int c, int i, int j)
 			gsl_complex_conjugate(gsl_matrix_complex_get(psi_c, i, j));
 	}
 	static const double a = Omega*N;
-	return res * Ec / a;
+	//cout << res * Ec  << endl;  
+	return -res * Ec /sqrt(a);  
 }
 
 

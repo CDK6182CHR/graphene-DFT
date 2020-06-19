@@ -4,7 +4,7 @@ OBJS=$(source:%.cpp=%.o)
 
 CXX=g++
 CC=gcc
-CXXFLAGS=-g -Wall -w -std=c++17 -lgsl
+CXXFLAGS=-g -Wall -w -std=c++11 -lgsl
 
 $(target):$(OBJS)
 	$(CXX) -o $(target) $(OBJS)  $(CXXFLAGS)
