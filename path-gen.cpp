@@ -5,6 +5,7 @@ using namespace std;
 
 void process_path()
 {
+	//采用C++面向对象的IO库，以便使用operator<<重载
 	//OPEN(path, "KPATH.txt", "w");  //写入路径转折点表  （x,K空间坐标）
 	//OPEN(fp, "EIGENVAL.txt", "w");  //横坐标点，所有能量本征值
 	FSTREAM(path, "KPATH.txt", ios::out);
@@ -34,8 +35,6 @@ void process_path()
 			k += dk;
 			x += 1;
 		}
-
-			
 		if (i == KPOINTS - 2) {//最后一次循环，补充最后一个点
 			cout << kcnt << ' ';
 			bool f=solve_k(k);

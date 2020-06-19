@@ -19,10 +19,10 @@ void construct_H(const GVector2D& k);
 
 void construct_Vr();
 
-double Vext(const GVector2D& r0, int a, int b);
-inline GComplex Veff1(int a, int b, double p); 
-inline GComplex Veff2(int a, int b, double p);
-double Vee(int a, int b);
+
+inline GComplex Veff1(int a, int b, double p);  //离子1的势能
+inline GComplex Veff2(int a, int b, double p);  //离子2的势能
+double Vee(int a, int b);                       //两电子互作用势能
 
 double cal_density(const GVector2D& k, int step);//计算电子密度，并返回总能量
 void cal_density_single(const GVector2D& k,int n);//计算一条能带上对应电子的能量。n: 特征值编号
@@ -33,6 +33,6 @@ GComplex V_FT(const GVector2D& Kh);  //手工数值积分计算FT。返回的是V(Kh)
 
 void solve_single_secular(const GVector2D& k);
 
-void norm_density();// 对密度做归一化处理
+//void norm_density();// 对密度做归一化处理 弃用
 
-void norm_density_single(gsl_matrix* m, int electrons);
+void norm_density_single(gsl_matrix* m, int electrons);  //归一化单个轨道产生的密度

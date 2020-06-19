@@ -25,16 +25,13 @@ void cal_psi_c(
 	gsl_matrix_complex* psic,
 	const gsl_matrix* phic,  //打表
 	std::function<double(double)> phi,
-	const GVector2D& r0,
-	const GComplex& A
+	const GVector2D& r0
 	);
 
+//旧版本直接求和的粗糙实现，现已弃用
+#if 0
 GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh, 
 	const gsl_matrix_complex* psic, const gsl_matrix* phic,const GComplex& A);
-
-//运用数值积分手段算
-GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh,
-	std::function<double(double)> phi, const GVector2D& r0);
 
 //计算k点对应的所有Kh的 <k+Kh | psi_c>
 void cal_k_psi_c(
@@ -44,6 +41,11 @@ void cal_k_psi_c(
 	const gsl_matrix* phic,  //phi_c 局域芯电子波函数
 	const GComplex& A
 	);
+#endif
+
+//运用数值积分手段算
+GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh,
+	std::function<double(double)> phi, const GVector2D& r0);
 
 //用数值积分方法计算所有Kh的 <k+Kh | psi_c>
 void cal_k_psi_c(
@@ -55,6 +57,9 @@ void cal_k_psi_c(
 
 void construct_S(const GVector2D& k);
 
+//实空间赝势值的度量，暂不启用
+#if 0
 void cal_Vopw_matrix(const GVector2D& k);
 
 GComplex Vopw(const GVector2D& k,int c/*芯电子轨道编号*/, int i, int j);
+#endif

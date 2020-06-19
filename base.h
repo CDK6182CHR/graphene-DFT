@@ -18,7 +18,6 @@ extern const double hbar_2me;
 extern const double Omega;//正空间元胞体积（面积）
 
 extern const double A0;//正空间晶格常数
-extern const double A0z;//z方向虚拟晶格常数，只用来处理归一化的问题
 
 extern const double E1s, E2s;  //原子轨道本征能量
 extern const double Ec_all[NInnerOrbit];  //各个原子轨道的能量本征值，按数组形式
@@ -51,20 +50,13 @@ extern const GVector2D neigh[NNeigh];  //近邻矩阵
 
 extern const gsl_matrix
 * Vext_1, * Vext_2, //外场势能是个常数
-* sum_ee;  //求和常数打表
-
+* sum_ee;           //求和常数打表
 
 
 double phi_1s(double r);  //1s轨道波函数，各向同性
 double phi_2s(double r);  //2s轨道波函数，各向同性
 
 GVector2D directPos(int a, int b);//由格点位置计算笛卡尔坐标 需要时实现
-
-//double dis(const GVector2D& center, int a1, int a2);
-//center（笛卡尔坐标）到(a1,a2) （分数坐标）的距离
-//必须考虑平移对称性，最近的那个中心的距离。
-
-//double dis(int a1, int b1, int a2, int b2);//考虑平移对称性
 
 double simpleDis(const GVector2D& center, int a1, int a2);//不考虑平移对称性
 

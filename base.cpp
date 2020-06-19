@@ -20,14 +20,13 @@ const double me=GSL_CONST_MKSA_MASS_ELECTRON;//电子质量
 const double hbar_2me = hbar * hbar / (2 * me);
 
 const double A0=2.46e-10;//正空间晶格常数
-const double A0z = 1;  //z方向虚拟的晶格常数，归一化时候用
+
 const double Omega = sqrt(3) * A0 * A0 / 2;
 
 const double E1s = -me * pow(6 * e2k, 2) / (2 * hbar * hbar * 0.25);  //二维能量本征值
-//const double E2s = -3.4 * GSL_CONST_MKSA_ELECTRON_CHARGE;
+
 const double Ec_all[NInnerOrbit] = { 
 	E1s,E1s,
-	//E2s,E2s 
 };
 const int NValence = 8;//价电子数目
 const double e = GSL_CONST_MKSA_ELECTRON_CHARGE;
@@ -62,32 +61,6 @@ const GVector2D KPath[KPOINTS] = {
 };
 
 GVector2D* Khs;
-
-//inline int _cal_N() {
-//	const int NX = RCut / A0;//最大的查找范围
-//	int cnt = 0;
-//	double A11 = A1.x(), A12 = A1.y(),
-//		A21 = A2.x(), A22 = A2.y();
-//	for (int i = -NX; i <= NX; i++)
-//		for (int j = -NX; j <= NX; j++) {
-//			double X = i * A11 + j * A21;
-//			double Y = i * A12 + j * A22;
-//			if (sqrt(X * X + Y * Y) <= RCut)
-//				cnt++;
-//		}
-//	Rls = new GVector2D[cnt];
-//	int t = 0;
-//	for (int i = -NX; i <= NX; i++)
-//		for (int j = -NX; j <= NX; j++) {
-//			double X = i * A11 + j * A21;
-//			double Y = i * A12 + j * A22;
-//			if (sqrt(X * X + Y * Y) <= RCut) {
-//				Rls[t++] = GVector2D(X, Y);
-//			}
-//		}
-//	return cnt;
-//}
-
 
 inline int _cal_N_set() {
 	const int NX = KCut *0.5*A0/M_PI;//最大的查找范围
@@ -229,7 +202,7 @@ gsl_matrix* _init_Vext(const GVector2D& r0)
 const gsl_matrix* Vext_1 = _init_Vext(r1), * Vext_2 = _init_Vext(r2);
 
 
-//按差向量为基本，打表所有点对的求和常数
+//按差向量为索引，打表所有点对的求和常数
 gsl_matrix* _init_Vee_sum()
 {
 	gsl_matrix* m = gsl_matrix_alloc(2 * RCount - 1, 2 * RCount - 1);

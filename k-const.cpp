@@ -46,51 +46,29 @@ gsl_matrix_complex* S = gsl_matrix_complex_alloc(NSet, NSet),
 
 void cal_k_consts(const GVector2D& k)
 {
-	GComplex A(0, 0);  //相因子求和
-	//for (int i = 0; i < N; i++) {
-	//	for (int j = 0; j < N; j++) {
-	//		A += gsl_complex_exp(gsl_complex_rect(0, (Rls[i] - Rls[j]) * k));
-	//	}
-	//}
-	//A *= sqrt(Omega) / RCount / RCount / N;
-	//cout << "A=" << A << endl;
-	cal_psi_c(k, psi_1s1,phi_1s1, phi_1s, r1, A);
-	cal_psi_c(k, psi_1s2,phi_1s2, phi_1s, r2, A);
-	//cal_psi_c(k, psi_2s1, phi_2s, r1);
-	//cal_psi_c(k, psi_2s2, phi_2s, r2);
-	//cal_k_psi_c(k, kpsi_1s1, psi_1s1,phi_1s1,A);
-	//cal_k_psi_c(k, kpsi_1s2, psi_1s2,phi_1s2,A);
+	cal_psi_c(k, psi_1s1,phi_1s1, phi_1s, r1);
+	cal_psi_c(k, psi_1s2,phi_1s2, phi_1s, r2);
 	cal_k_psi_c(k, kpsi_1s1, phi_1s, r1);
 	cal_k_psi_c(k, kpsi_1s2, phi_1s, r2);
-	//cal_k_psi_c(k, kpsi_2s1, phi_2s1);
-	//cal_k_psi_c(k, kpsi_2s2, phi_2s2);
 	construct_S(k);
 	//cal_Vopw_matrix(k);
 }
 
 //对于每个k，对实空间元胞求和，计算psi_c
 void cal_psi_c(const GVector2D& k,gsl_matrix_complex* psic, const gsl_matrix* phic,
-	std::function<double(double)> phi, const GVector2D& r0,const GComplex& A)
+	std::function<double(double)> phi, const GVector2D& r0)
 {
 	gsl_matrix_complex_set_zero(psic);
 	for (int a1 = 0; a1< RCount; a1++) {
 		for (int a2 = 0; a2 <RCount; a2++) {
-			//double r = simpleDis(r0, a1, a2);
 			GComplex p(0);
-			//for (int i = 0; i < N; i++) {
-			//	p += gsl_complex_mul_real(gsl_complex_exp(gsl_complex_rect(0, k * Rls[i])),
-			//		phi(r));
-			//}
 			const GVector2D&& r = directPos(a1, a2);
 			const GVector2D&& t = r0 - r;
 			static const double aa = 4.0 / (ABohr * sqrt(2 * M_PI * N));
 			for (int i = -LHalfCount; i <=LHalfCount; i++) {
 				for (int j = -LHalfCount; j <=LHalfCount; j++) {
 					const GVector2D&& Rl = A1 * i + A2 * j;
-					//以下是用打表结果近似计算
-					//p += gsl_complex_mul_real(gsl_complex_exp(gsl_complex_rect(0, k * Rl)),
-					//	gsl_matrix_get(phic, a1, a2));
-					//以下是用函数准确计算，测试效率。注意归一化常数的变化。
+					//用解析形式的函数调用准确计算
 					double d = (Rl + t).abs();
 					p += GComplex(gsl_complex_exp(
 						gsl_complex_rect(0,k * Rl)))*phi(d);
@@ -101,6 +79,10 @@ void cal_psi_c(const GVector2D& k,gsl_matrix_complex* psic, const gsl_matrix* ph
 	}
 }
 
+/*
+旧版本实现的按实空间格点做0阶代数精度求和的算法，现已弃用
+*/
+# if 0
 //对每个Kh计算  < k+Kh | psi_c >  数值积分
 GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh, 
 	const gsl_matrix_complex* psi,const gsl_matrix* phic,const GComplex& A)
@@ -114,12 +96,20 @@ GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh,
 			//p += GComplex(gsl_complex_exp(gsl_complex_rect(0, -(k * r) - (Kh * r)))) *
 			//	gsl_matrix_complex_get(psi, a1, a2);
 		}
-		//todo: 这个积分表达式还不完全确定。
 	}
-	//static const double a = sqrt(N * Omega) / RCount / RCount;
-	static const double a = sqrt(Omega*A0z) / RCount / RCount;
+	static const double a = sqrt(Omega) / RCount / RCount;
 	return p * a;
 }
+
+//暂定用比较粗糙的矩形法数值积分公式计算
+void cal_k_psi_c(const GVector2D& k, GComplex* kpsi, const gsl_matrix_complex* psic,
+	const gsl_matrix* phic, const GComplex& A)
+{
+	for (int i = 0; i < NSet; i++) {
+		kpsi[i] = cal_k_Kh_psi_c(k, Khs[i], psic, phic, A);
+	}
+}
+#endif
 
 GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh, 
 	std::function<double(double)> phi, const GVector2D& r0)
@@ -133,14 +123,8 @@ GComplex cal_k_Kh_psi_c(const GVector2D& k, const GVector2D& Kh,
 		);
 }
 
-//暂定用比较粗糙的矩形法数值积分公式计算
-void cal_k_psi_c(const GVector2D& k, GComplex* kpsi, const gsl_matrix_complex* psic, 
-	const gsl_matrix* phic, const GComplex& A)
-{
-	for (int i = 0; i < NSet; i++) {
-		kpsi[i] = cal_k_Kh_psi_c(k, Khs[i], psic,phic,A);
-	}
-}
+
+
 
 void cal_k_psi_c(const GVector2D& k, GComplex* kpsi, 
 	const std::function<double(double)>& phi, const GVector2D& r0)
@@ -175,16 +159,12 @@ void construct_S(const GVector2D& k)
 	gsl_linalg_complex_LU_invert(S, P, Sinv);
 }
 
-void cal_Vopw_matrix(const GVector2D& k)
-{
-	for (int c = 0; c < NInnerOrbit; c++) {
-		gsl_matrix_complex* vopw = Vopw_all[c];
-		for (int i = 0; i < RCount; i++)
-			for (int j = 0; j < RCount; j++)
-				gsl_matrix_complex_set(vopw, i, j, Vopw(k, c, i, j));
-	}
-}
 
+/*
+实空间坐标下等效的赝势值的计算。目前数量级上似存在问题
+仅在需要在实空间算出等效赝势的时候才启用。目前选择直接计算H矩阵元中的赝势项。
+*/
+# if 0
 GComplex Vopw(const GVector2D& k,int c, int i, int j)
 {
 	double Ec = Ec_all[c];
@@ -202,6 +182,16 @@ GComplex Vopw(const GVector2D& k,int c, int i, int j)
 	return -res * Ec /sqrt(a);  
 }
 
+void cal_Vopw_matrix(const GVector2D& k)
+{
+	for (int c = 0; c < NInnerOrbit; c++) {
+		gsl_matrix_complex* vopw = Vopw_all[c];
+		for (int i = 0; i < RCount; i++)
+			for (int j = 0; j < RCount; j++)
+				gsl_matrix_complex_set(vopw, i, j, Vopw(k, c, i, j));
+	}
+}
 
+#endif
 
 

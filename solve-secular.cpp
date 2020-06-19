@@ -18,14 +18,14 @@ gsl_matrix_complex* Vr = gsl_matrix_complex_alloc(RCount, RCount);
 gsl_matrix_complex* H = gsl_matrix_complex_alloc(NSet, NSet);
 
 gsl_vector* Ek = gsl_vector_alloc(NSet);
-//gsl_vector* Ek_sorted = gsl_vector_alloc(NSet);//经过排序的特征值
+
 gsl_matrix_complex* aKhs = gsl_matrix_complex_alloc(NSet, NSet);//特征向量，一列一个
 
-//double V0;  //平均势能
 
 void init_density()
 {
-	//gsl_matrix_complex_set_identity(aKhs);
+	//CA-LDA对电子密度有点敏感，电子密度出现奇异点容易导致LDA势炸掉，故初始需要设成均匀
+	//gsl_matrix_set_identity(density);
 	for (int i = 0; i < RCount; i++)
 		for (int j = 0; j < RCount; j++)
 			gsl_matrix_set(density, i, j, NValence / Omega * RCount * RCount);
@@ -33,7 +33,7 @@ void init_density()
 
 bool solve_k(const GVector2D& k)
 {
-	//init_density();  //for test
+	//init_density();  //测试初始状态的影响
 	cout << "Computing for k point " << k << endl;
 	cal_k_consts(k);
 	double Ecur = 0;  //当前状态能量
@@ -50,13 +50,10 @@ bool solve_k(const GVector2D& k)
 		cout << (step++) <<"\t\t"<<setprecision(14)<< En << endl;
 		if (step >= MaxStep) {
 			cout << "[Warning] Terminate forcely for k point " << k << endl;
-			//break;  //todo: 测试，保留所有范围合理的解，无论收敛与否
 			return false;
 		}
 	} while (fabs((En - Ecur) / En) > prec);
 	cout << "converged for k point " << k << endl;
-	//if (fabs(En) > 5e-17)
-	//	return false;  //todo: 尝试强制去掉异常点
 	return true;
 }
 
@@ -108,10 +105,8 @@ void construct_Vr()
 			GComplex vext = 0;  //电子离子互作用势能
 			const double p = gsl_matrix_get(density, i, j);
 			const GVector2D r = directPos(i, j);
-			//vee要除以2，电子互作用能为一对电子所共有
-			vee = Vee(i, j);//电子互作用能应该还要算上当前位置的密度
-			//vext += VExtLocal(dis(r1, i, j),p);
-			//vext += VExtLocal(dis(r2, i, j),p);
+			//vee要除以2，电子互作用能为一对电子所共有——已经在求和常数中体现。
+			vee = Vee(i, j);
 			vext += Veff1(i, j, 1);
 			vext += Veff2(i, j, 1);
 			//vext *= Omega / RCount / RCount;  //并没有做数值积分！不要归一化。
@@ -122,44 +117,16 @@ void construct_Vr()
 	}
 }
 
-//离子势能。考虑最近邻元胞积分
-double Vext(const GVector2D& r0,int a,int b)
-{
-	static const double c0 = 7.4658;
-	GVector2D&& r = directPos(a, b);
-	double res = 1.0 / r.dis(r0);
-	//double res = dis(r0, a, b);
-	//for (int i = 0; i < NNeigh; i++) {
-	//	const GVector2D& Rl = neigh[i];
-	//	res += 1.0 / r.dis(r0 + Rl);
-	//}
-	res += c0 * LCount / A0;
-	return res;
-}
 
 //以r1离子为中心的有效离子势能计算，包含赝势的抵扣部分。
 inline GComplex Veff1(int a, int b,double p)
 {
-	//double d = Vext(r1, a, b);
-	//return GComplex(d,0);
-	////return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
-	////return GComplex(-N * e2k * Z / r) -gsl_matrix_complex_get(Vopw_1s1, a, b);
 	return GComplex(gsl_matrix_get(Vext_1, a, b));
 }
 
-GComplex Veff1_debug(int a, int b, double p)
-{
-	double d = Vext(r1, a, b);
-	return GComplex(d, 0);
-	//return -GComplex(gsl_matrix_complex_get(Vopw_1s1, a, b));
-	//return GComplex(-e2k * Z * d, 0) - gsl_matrix_complex_get(Vopw_1s1, a, b);
-}
 
 inline GComplex Veff2(int a, int b,double p)
 {
-	//double d = Vext(r2, a, b);
-	//return GComplex(- e2k * Z *d);
-	////return GComplex(-p * e2k * Z / r) - gsl_matrix_complex_get(Vopw_1s2, a, b);
 	return GComplex(gsl_matrix_get(Vext_2, a, b));
 }
 
@@ -301,13 +268,16 @@ double VLDA(double p)
 	return res*e;//按照电子伏特为单位处理
 }
 
-//double VLDA(double p)
-//{
-//	//注意为了量纲问题，改了参数。
-//	//return 0;
-//	static const double AA = -  e * e / (M_PI) * pow(3 * M_PI * M_PI, 1.0 / 2);
-//	return AA * sqrt(p);
-//}
+//另一种形式的LDA交换关联势，引自VASP-tutor
+#if 0
+double VLDA(double p)
+{
+	//注意为了量纲问题，改了参数。
+	//return 0;
+	static const double AA = -  e * e / (M_PI) * pow(3 * M_PI * M_PI, 1.0 / 2);
+	return AA * sqrt(p);
+}
+#endif
 
 GComplex V_FT(const GVector2D& Kh)
 {
@@ -335,6 +305,8 @@ void solve_single_secular(const GVector2D& k)
 	gsl_eigen_hermv(C, Ek, aKhs, ws);//特征向量正交且归一，和Ek中的顺序一一对应
 }
 
+/*先算完总的密度再归一化是不合适的，这样导致各个轨道贡献可能不均匀。弃用。*/
+# if 0
 void norm_density()
 {
 	double tot = 0;
@@ -352,6 +324,7 @@ void norm_density()
 		}
 	}
 }
+#endif
 
 void norm_density_single(gsl_matrix* m,int electrons)
 {
