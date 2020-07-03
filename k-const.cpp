@@ -7,14 +7,17 @@
 #include<gsl/gsl_linalg.h>
 #include "integration.h"
 #include<iostream>
+#include"solve-secular.h"
 using namespace std;
 
+int NSet;   //基组数目
+GVector2D* Khs = nullptr;  //所有基组的平面波波矢
 
 gsl_matrix_complex
 * psi_1s1 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_1s2 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_2s1 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_2s2 = gsl_matrix_complex_alloc(RCount, RCount);
+* psi_1s2 = gsl_matrix_complex_alloc(RCount, RCount);
+//* psi_2s1 = gsl_matrix_complex_alloc(RCount, RCount),
+//* psi_2s2 = gsl_matrix_complex_alloc(RCount, RCount);
 
 gsl_matrix_complex* psi_all[NInnerOrbit] = {
 	psi_1s1,psi_1s2,
@@ -22,17 +25,10 @@ gsl_matrix_complex* psi_all[NInnerOrbit] = {
 };
 
 GComplex
-* kpsi_1s1 = new GComplex[NSet],
-* kpsi_1s2 = new GComplex[NSet],
-* kpsi_2s1 = new GComplex[NSet],
-* kpsi_2s2 = new GComplex[NSet];
+* kpsi_1s1 = nullptr,
+* kpsi_1s2 = nullptr;
 
-GComplex* kpsi_all[NInnerOrbit] = {
-	kpsi_1s1,
-	kpsi_1s2,
-	//kpsi_2s1,
-	//kpsi_2s2
-};
+GComplex* kpsi_all[NInnerOrbit];
 
 gsl_matrix_complex
 * Vopw_1s1 = gsl_matrix_complex_alloc(RCount,RCount),
@@ -41,11 +37,12 @@ gsl_matrix_complex* Vopw_all[NInnerOrbit] = {
 	Vopw_1s1,Vopw_1s2
 };
 
-gsl_matrix_complex* S = gsl_matrix_complex_alloc(NSet, NSet),
-* Sinv = gsl_matrix_complex_alloc(NSet, NSet);
+gsl_matrix_complex* S = nullptr,
+* Sinv = nullptr;
 
 void cal_k_consts(const GVector2D& k)
 {
+	NSet = cal_N_set(k);  //计算基组数目，同时预先存储计算所有的基组，分配空间
 	cal_psi_c(k, psi_1s1,phi_1s1, phi_1s, r1);
 	cal_psi_c(k, psi_1s2,phi_1s2, phi_1s, r2);
 	cal_k_psi_c(k, kpsi_1s1, phi_1s, r1);
@@ -140,7 +137,7 @@ void construct_S(const GVector2D& k)
 	gsl_matrix_complex_set_zero(S);
 	gsl_matrix_complex_set_zero(Sinv);
 	static int signum;
-	static gsl_permutation* P = gsl_permutation_alloc(NSet);
+	gsl_permutation* P = gsl_permutation_alloc(NSet);
 	for (int i = 0; i < NSet; i++) {
 		for (int j = i; j < NSet; j++) {
 			GComplex s ((int)(i == j),0);//矩阵元。首先有个Kroneck-delta
@@ -157,6 +154,7 @@ void construct_S(const GVector2D& k)
 	//output_reciprocal_matrix(S, "S.txt");
 	gsl_linalg_complex_LU_decomp(S, P, &signum);
 	gsl_linalg_complex_LU_invert(S, P, Sinv);
+	gsl_permutation_free(P);
 }
 
 
@@ -194,4 +192,54 @@ void cal_Vopw_matrix(const GVector2D& k)
 
 #endif
 
+//基组改为对每个k点计算。返回基组数目
+int cal_N_set(const GVector2D& k) {
+	const int NX = KCut * 0.5 * A0 / M_PI+1;//最大的查找范围
+	static const double KCutSquare = KCut * KCut;
+	int cnt = 0;
+	double B11 = B1.x(), B12 = B1.y(),
+		B21 = B2.x(), B22 = B2.y();
+	for (int i = -NX; i <= NX; i++)
+		for (int j = -NX; j <= NX; j++) {
+			double X = i * B11 + j * B21;
+			double Y = i * B12 + j * B22;
+			const GVector2D&& kKh = k + GVector2D(X, Y);
+			if (kKh.square() <= KCutSquare)
+				cnt++;
+		}
+	if (Khs) {//非第一次调用
+		delete[] Khs;
+		delete[] kpsi_1s1;
+		delete[] kpsi_1s2;
+		gsl_matrix_complex_free(S);
+		gsl_matrix_complex_free(Sinv);
+		gsl_matrix_complex_free(H);
+		gsl_matrix_complex_free(aKhs);
+		gsl_matrix_complex_free(C);
+		gsl_vector_free(Ek);
+	}
+	Khs = new GVector2D[cnt];
+	kpsi_1s1 = new GComplex[cnt];
+	kpsi_1s2 = new GComplex[cnt];
+	kpsi_all[0] = kpsi_1s1, kpsi_all[1] = kpsi_1s2;
+	S = gsl_matrix_complex_alloc(cnt, cnt);
+	Sinv = gsl_matrix_complex_alloc(cnt, cnt);
+	H = gsl_matrix_complex_alloc(cnt, cnt);
+	aKhs = gsl_matrix_complex_alloc(cnt, cnt);
+	C = gsl_matrix_complex_alloc(cnt, cnt);
+	Ek = gsl_vector_alloc(cnt);
 
+	int t = 0;
+	for (int i = -NX; i <= NX; i++)
+		for (int j = -NX; j <= NX; j++) {
+			double X = i * B11 + j * B21;
+			double Y = i * B12 + j * B22;
+			const GVector2D&& kKh = k + GVector2D(X, Y);
+			if (kKh.square()<=KCutSquare) {
+				Khs[t++] = GVector2D(X, Y);
+			}
+		}
+
+	cout << "k-point " << k << ", NSet=" << cnt << endl;
+	return cnt;
+}

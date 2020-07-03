@@ -27,7 +27,6 @@ int main()
 	//gsl_set_error_handler(handler);
 	clock_t start = clock();
 	cout << "N=" << N << endl;
-	cout << "Nset=" << NSet << endl;
 	cout << "RCount=" << RCount << endl;
 	cout << "KCount=" << KCount << endl;
 	cout << "E1s=" << E1s << endl;

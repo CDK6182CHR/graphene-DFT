@@ -5,6 +5,7 @@
 #include<functional>
 #include<stdint.h>
 #include"GComplex.h"
+#include "k-const.h"
 using namespace std;
 
 const GVector2D A1(sqrt(3)* A0 / 2, A0 / 2);
@@ -37,15 +38,15 @@ const int Z = 6;
 inline int _cal_N_set();
 //计算参数
 //const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
-const double KCut=8e10;//平面波截断半径，决定基组数目
+const double KCut=10e10;//平面波截断半径，决定基组数目
 const double prec = 1e-8; //收敛相对误差判据
 const int MaxStep = 100;  //最大迭代步数
 const int LHalfCount = 10;
 const int LCount = 2 * LHalfCount + 1;
 const int N = LCount * LCount;//晶胞数量
-const int KCount=18;//1BZ高对称点路径每段折线的K点数目
+const int KCount=10;//1BZ高对称点路径每段折线的K点数目
 const int RCount=60;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
-const int NSet = _cal_N_set();//基组数目
+
 
 
 const GVector2D neigh[NNeigh] = {
@@ -60,33 +61,9 @@ const GVector2D KPath[KPOINTS] = {
 	//GVector2D(0,0),  //Gamma
 };
 
-GVector2D* Khs;
 
-inline int _cal_N_set() {
-	const int NX = KCut *0.5*A0/M_PI;//最大的查找范围
-	cout << "Nx=" << NX << endl;
-	int cnt = 0;
-	double B11 = B1.x(), B12 = B1.y(),
-		B21 = B2.x(), B22 = B2.y();
-	for (int i = -NX; i <= NX; i++)
-		for (int j = -NX; j <= NX; j++) {
-			double X = i * B11 + j * B21;
-			double Y = i * B12 + j * B22;
-			if (sqrt(X * X + Y * Y) <= KCut)
-				cnt++;
-		}
-	Khs = new GVector2D[cnt];
-	int t = 0;
-	for (int i = -NX; i <= NX; i++)
-		for (int j = -NX; j <= NX; j++) {
-			double X = i * B11 + j * B21;
-			double Y = i * B12 + j * B22;
-			if (sqrt(X * X + Y * Y) <= KCut) {
-				Khs[t++] = GVector2D(X, Y);
-			}
-		}
-	return cnt;
-}
+
+
 
 const gsl_matrix* _init_phi_table(function<double(double)> phi,
 	const GVector2D& r0)

@@ -2,6 +2,7 @@
 #include <iostream>
 using namespace std;
 
+extern int NSet;  //йтр╩об
 
 void process_path()
 {

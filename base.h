@@ -35,10 +35,10 @@ extern const int LCount;  //沿每个基矢方向的晶胞数量。
 extern const int N;//晶胞数量
 extern const int KCount;//1BZ高对称点路径每段折线的K点数目
 extern const int RCount;//正空间划分mesh的密度。将每一条基矢等分成多少段。
-extern const int NSet;//基组个数
+
 
 extern GVector2D* Rls;  //所有要考虑的正空间格点
-extern GVector2D* Khs;  //所有要考虑的倒空间格点
+
 
 extern const gsl_matrix* phi_1s1, * phi_1s2, * phi_2s1, * phi_2s2; //局域芯电子波函数打表
 

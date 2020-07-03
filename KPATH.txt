@@ -1,4 +1,4 @@
 0 GVector2D(0, 1.70276e+10)
-18 GVector2D(0, 0)
-36 GVector2D(7.37317e+09, 1.27707e+10)
-54 GVector2D(0, 1.70276e+10)
+10 GVector2D(0, 0)
+20 GVector2D(7.37317e+09, 1.27707e+10)
+30 GVector2D(0, 1.70276e+10)

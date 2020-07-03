@@ -17,6 +17,9 @@ extern GComplex* kpsi_all[NInnerOrbit];
 extern gsl_matrix_complex* Vopw_1s1, * Vopw_1s2;
 extern gsl_matrix_complex* Vopw_all[NInnerOrbit];
 
+extern int NSet;//基组个数
+extern GVector2D* Khs;  //所有要考虑的倒空间格点
+
 //完成对一个k点的所有常量计算
 void cal_k_consts(const GVector2D& k);
 
@@ -63,3 +66,5 @@ void cal_Vopw_matrix(const GVector2D& k);
 
 GComplex Vopw(const GVector2D& k,int c/*芯电子轨道编号*/, int i, int j);
 #endif
+
+int cal_N_set(const GVector2D& k);

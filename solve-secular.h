@@ -9,6 +9,7 @@ extern gsl_matrix_complex* Vr;  //正空间势场
 extern gsl_matrix_complex* H;  //Hamiltonian矩阵
 extern gsl_vector* Ek;  //当前求解的本征值
 extern gsl_matrix_complex* aKhs;
+extern gsl_matrix_complex* C;  //存储中间结果用
 
 extern double V0;  //平均势能
 

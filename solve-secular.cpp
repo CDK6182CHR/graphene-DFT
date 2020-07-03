@@ -15,11 +15,11 @@ using namespace std;
 gsl_matrix* density = gsl_matrix_alloc(RCount, RCount);
 gsl_matrix_complex* Vr = gsl_matrix_complex_alloc(RCount, RCount);
 
-gsl_matrix_complex* H = gsl_matrix_complex_alloc(NSet, NSet);
+gsl_matrix_complex* H = nullptr;
 
-gsl_vector* Ek = gsl_vector_alloc(NSet);
+gsl_vector* Ek = nullptr;
 
-gsl_matrix_complex* aKhs = gsl_matrix_complex_alloc(NSet, NSet);//特征向量，一列一个
+gsl_matrix_complex* aKhs = nullptr;//特征向量，一列一个
 
 
 void init_density()
@@ -34,11 +34,11 @@ void init_density()
 bool solve_k(const GVector2D& k)
 {
 	//init_density();  //测试初始状态的影响
+	cout << "-------------------------------------------------------------" << endl;
 	cout << "Computing for k point " << k << endl;
 	cal_k_consts(k);
 	double Ecur = 0;  //当前状态能量
 	double En = 0;
-	cout << "------------------------------------------" << endl;
 	cout << "Step\t\ttotE" << endl;
 	int step = 0;
 	do {
@@ -199,12 +199,12 @@ double cal_density(const GVector2D& k,int step)
 {
 	gsl_matrix_set_zero(density);
 	gsl_eigen_hermv_sort(Ek, aKhs, GSL_EIGEN_SORT_VAL_ASC);
-	static gsl_matrix* temp = gsl_matrix_alloc(NSet, NSet);
-	if ((step+5)%10==0) {//与前面的做个平均,加速收敛
-		for (int i = 0; i < NSet; i++)
-			for (int j = 0; j < NSet; j++)
-				gsl_matrix_set(temp, i, j, gsl_matrix_get(density, i, j));
-	}
+	//static gsl_matrix* temp = gsl_matrix_alloc(NSet, NSet);
+	//if (false&&(step+5)%10==0) {//与前面的做个平均,加速收敛
+	//	for (int i = 0; i < RCount; i++)
+	//		for (int j = 0; j < RCount; j++)
+	//			gsl_matrix_set(temp, i, j, gsl_matrix_get(density, i, j));
+	//}
 	double Etot = 0;
 	//保证价电子数目是偶数
 	for (int i = 0; i < NValence / 2; i++) {
@@ -217,17 +217,17 @@ double cal_density(const GVector2D& k,int step)
 	static gsl_rng* r = gsl_rng_alloc(gsl_rng_mt19937);
 	//unsigned long int Seed = 23410981;
 	//gsl_rng_set(r, Seed);
-	if ((step + 1) % 15 == 0) {
-		//double rate = gsl_rng_uniform(r);
-		//double rate = 1.0;
-		cout << "Add average on density with rate=" << rate << endl;
-		for (int i = 0; i < NSet; i++)
-			for (int j = 0; j < NSet; j++)
-				gsl_matrix_set(density, i, j,
-					(rate*gsl_matrix_get(density, i, j) + 
-						(1-rate)*gsl_matrix_get(temp, i, j)));
-		//norm_density();
-	}
+	//if (false&&(step + 1) % 15 == 0) {
+	//	//double rate = gsl_rng_uniform(r);
+	//	//double rate = 1.0;
+	//	cout << "Add average on density with rate=" << rate << endl;
+	//	for (int i = 0; i < NSet; i++)
+	//		for (int j = 0; j < NSet; j++)
+	//			gsl_matrix_set(density, i, j,
+	//				(rate*gsl_matrix_get(density, i, j) + 
+	//					(1-rate)*gsl_matrix_get(temp, i, j)));
+	//	//norm_density();
+	//}
 	
 	//////////////////
 	//double tot=0;
@@ -292,17 +292,18 @@ GComplex V_FT(const GVector2D& Kh)
 	}
 	return res / RCount / RCount;
 }
+gsl_matrix_complex* C = nullptr;//存储中间结果
 
 //一次求解久期方程过程的封装。S,H都已经计算好。
 void solve_single_secular(const GVector2D& k)
 {
-	static gsl_matrix_complex* C = gsl_matrix_complex_alloc(NSet, NSet);//存储中间结果
 	//gsl_matrix_complex_set_zero(C);
 	gsl_blas_zhemm(CblasLeft, CblasUpper, gsl_complex_rect(1, 0), Sinv, H,
 		gsl_complex_rect(0, 0), C);
 	//C=Sinv*H
-	static gsl_eigen_hermv_workspace* ws = gsl_eigen_hermv_alloc(NSet);
+	gsl_eigen_hermv_workspace* ws = gsl_eigen_hermv_alloc(NSet);
 	gsl_eigen_hermv(C, Ek, aKhs, ws);//特征向量正交且归一，和Ek中的顺序一一对应
+	gsl_eigen_hermv_free(ws);
 }
 
 /*先算完总的密度再归一化是不合适的，这样导致各个轨道贡献可能不均匀。弃用。*/
