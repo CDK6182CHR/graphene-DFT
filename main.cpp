@@ -26,6 +26,7 @@ int main()
 {
 	//gsl_set_error_handler(handler);
 	clock_t start = clock();
+	cout << "EnCut=" << hbar * hbar * KCut * KCut / 2 / me / e << endl;
 	cout << "N=" << N << endl;
 	cout << "Nset=" << NSet << endl;
 	cout << "RCount=" << RCount << endl;
