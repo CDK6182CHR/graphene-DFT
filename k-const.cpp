@@ -16,10 +16,7 @@ gsl_matrix_complex
 //* psi_2s1 = gsl_matrix_complex_alloc(RCount, RCount),
 //* psi_2s2 = gsl_matrix_complex_alloc(RCount, RCount);
 
-gsl_matrix_complex* psi_all[NInnerOrbit] = {
-	psi_1s1,psi_1s2,
-	//psi_2s1,psi_2s2
-};
+gsl_matrix_complex* psi_all[NInnerOrbit];
 
 GComplex
 * kpsi_1s1 = nullptr,
@@ -27,12 +24,7 @@ GComplex
 * kpsi_2s1 = nullptr,
 * kpsi_2s2 = nullptr;
 
-GComplex* kpsi_all[NInnerOrbit] = {
-	kpsi_1s1,
-	kpsi_1s2,
-	//kpsi_2s1,
-	//kpsi_2s2
-};
+GComplex* kpsi_all[NInnerOrbit];
 
 //gsl_matrix_complex
 //* Vopw_1s1 = gsl_matrix_complex_alloc(RCount,RCount),

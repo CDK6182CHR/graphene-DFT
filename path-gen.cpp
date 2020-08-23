@@ -11,10 +11,14 @@ void system_init()
 {
 	S = gsl_matrix_complex_alloc(NSet, NSet);
 	Sinv = gsl_matrix_complex_alloc(NSet, NSet);
-	kpsi_all[0] = kpsi_1s1 = new GComplex[NSet];
-	kpsi_all[1] = kpsi_1s2 = new GComplex[NSet];
+	kpsi_1s1 = new GComplex[NSet];
+	kpsi_1s2 = new GComplex[NSet];
+	kpsi_all[0] = kpsi_1s1;
+	kpsi_all[1] = kpsi_1s2;
 	psi_1s1 = gsl_matrix_complex_alloc(RCount, RCount);
 	psi_1s2 = gsl_matrix_complex_alloc(RCount, RCount);
+	psi_all[0] = psi_1s1;
+	psi_all[1] = psi_1s2;
 	init_Vtable();
 }
 
