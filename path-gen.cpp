@@ -1,7 +1,24 @@
 #include "path-gen.h"
 #include <iostream>
+#include "base.h"
+#include "k-const.h"
 using namespace std;
 
+
+//2020年8月23日新增系统初始化函数，负责空间分配之类的问题，
+//防止分配前NSet之类的东西没初始化导致各种各样的问题。
+void system_init()
+{
+	S = gsl_matrix_complex_alloc(NSet, NSet);
+	Sinv = gsl_matrix_complex_alloc(NSet, NSet);
+	kpsi_1s1 = new GComplex[NSet];
+	kpsi_1s2 = new GComplex[NSet];
+	kpsi_2s1 = new GComplex[NSet];
+	kpsi_2s2 = new GComplex[NSet];
+	psi_1s1 = gsl_matrix_complex_alloc(RCount, RCount);
+	psi_1s2 = gsl_matrix_complex_alloc(RCount, RCount);
+	init_Vtable();
+}
 
 void process_path()
 {

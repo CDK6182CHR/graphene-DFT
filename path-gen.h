@@ -4,5 +4,6 @@
 #include "base.h"
 #include "GVector2D.h"
 
+void system_init();
 void process_path();
 

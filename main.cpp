@@ -24,7 +24,7 @@ void handler(const char* reason,
 
 int main()
 {
-	//gsl_set_error_handler(handler);
+	gsl_set_error_handler(handler);
 	clock_t start = clock();
 	cout << "EnCut=" << hbar * hbar * KCut * KCut / 2 / me / e << endl;
 	cout << "N=" << N << endl;
@@ -32,6 +32,7 @@ int main()
 	cout << "RCount=" << RCount << endl;
 	cout << "KCount=" << KCount << endl;
 	cout << "E1s=" << E1s << endl;
+	system_init();
 	init_density();
 	process_path();
 	output_real_matrix(psi_1s1, "psi_1s1.dat");

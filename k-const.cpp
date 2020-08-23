@@ -11,10 +11,10 @@ using namespace std;
 
 
 gsl_matrix_complex
-* psi_1s1 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_1s2 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_2s1 = gsl_matrix_complex_alloc(RCount, RCount),
-* psi_2s2 = gsl_matrix_complex_alloc(RCount, RCount);
+* psi_1s1 = nullptr,
+* psi_1s2 = nullptr;
+//* psi_2s1 = gsl_matrix_complex_alloc(RCount, RCount),
+//* psi_2s2 = gsl_matrix_complex_alloc(RCount, RCount);
 
 gsl_matrix_complex* psi_all[NInnerOrbit] = {
 	psi_1s1,psi_1s2,
@@ -22,10 +22,10 @@ gsl_matrix_complex* psi_all[NInnerOrbit] = {
 };
 
 GComplex
-* kpsi_1s1 = new GComplex[NSet],
-* kpsi_1s2 = new GComplex[NSet],
-* kpsi_2s1 = new GComplex[NSet],
-* kpsi_2s2 = new GComplex[NSet];
+* kpsi_1s1 = nullptr,
+* kpsi_1s2 = nullptr,
+* kpsi_2s1 = nullptr,
+* kpsi_2s2 = nullptr;
 
 GComplex* kpsi_all[NInnerOrbit] = {
 	kpsi_1s1,
@@ -34,15 +34,15 @@ GComplex* kpsi_all[NInnerOrbit] = {
 	//kpsi_2s2
 };
 
-gsl_matrix_complex
-* Vopw_1s1 = gsl_matrix_complex_alloc(RCount,RCount),
-* Vopw_1s2 = gsl_matrix_complex_alloc(RCount,RCount);
-gsl_matrix_complex* Vopw_all[NInnerOrbit] = {
-	Vopw_1s1,Vopw_1s2
-};
+//gsl_matrix_complex
+//* Vopw_1s1 = gsl_matrix_complex_alloc(RCount,RCount),
+//* Vopw_1s2 = gsl_matrix_complex_alloc(RCount,RCount);
+//gsl_matrix_complex* Vopw_all[NInnerOrbit] = {
+//	Vopw_1s1,Vopw_1s2
+//};
 
-gsl_matrix_complex* S = gsl_matrix_complex_alloc(NSet, NSet),
-* Sinv = gsl_matrix_complex_alloc(NSet, NSet);
+gsl_matrix_complex* S  ,
+* Sinv;
 
 void cal_k_consts(const GVector2D& k)
 {

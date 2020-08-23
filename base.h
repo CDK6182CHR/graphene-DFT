@@ -48,7 +48,7 @@ extern const GVector2D KPath[KPOINTS];
 #define NNeigh 8
 extern const GVector2D neigh[NNeigh];  //近邻矩阵
 
-extern const gsl_matrix
+extern gsl_matrix
 * Vext_1, * Vext_2, //外场势能是个常数
 * sum_ee;           //求和常数打表
 
@@ -85,3 +85,5 @@ inline double Vee_sum_arg(int da, int db)
 {
 	return gsl_matrix_get(sum_ee, da + RCount - 1, db + RCount - 1);
 }
+
+void init_Vtable();

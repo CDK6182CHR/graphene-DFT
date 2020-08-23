@@ -37,14 +37,14 @@ const int Z = 6;
 inline int _cal_N_set();
 //计算参数
 //const double RCut=30e-10;//正空间晶格范围，即做FT的积分范围
-const double KCut=8e10;//平面波截断半径，决定基组数目
+const double KCut=10e10;//平面波截断半径，决定基组数目
 const double prec = 1e-8; //收敛相对误差判据
 const int MaxStep = 100;  //最大迭代步数
 const int LHalfCount = 10;
 const int LCount = 2 * LHalfCount + 1;
 const int N = LCount * LCount;//晶胞数量
-const int KCount=18;//1BZ高对称点路径每段折线的K点数目
-const int RCount=60;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
+const int KCount=10;//1BZ高对称点路径每段折线的K点数目
+const int RCount=100;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
 
 
@@ -199,7 +199,7 @@ gsl_matrix* _init_Vext(const GVector2D& r0)
 	return m;
 }
 
-const gsl_matrix* Vext_1 = _init_Vext(r1), * Vext_2 = _init_Vext(r2);
+gsl_matrix* Vext_1 = nullptr, * Vext_2 = nullptr;
 
 
 //按差向量为索引，打表所有点对的求和常数
@@ -225,4 +225,11 @@ gsl_matrix* _init_Vee_sum()
 	return m;
 }
 
-const gsl_matrix* sum_ee = _init_Vee_sum();
+gsl_matrix* sum_ee = nullptr;
+
+void init_Vtable()
+{
+	Vext_1 = _init_Vext(r1);
+	Vext_2 = _init_Vext(r2);
+	sum_ee = _init_Vee_sum();
+}
