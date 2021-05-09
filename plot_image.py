@@ -26,7 +26,7 @@ def plot(filename,ax,title=""):
 
 if __name__ == '__main__':
 
-    filename1 = f"Vr.dat"
+    filename1 = f"density.dat"
     fig = plt.figure()
     # ax = fig.add_subplot(121)
     # plot(filename1,ax,"out1")

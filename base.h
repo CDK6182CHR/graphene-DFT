@@ -27,6 +27,8 @@ extern const double e,e2k;  //元电荷
 
 
 //计算参数
+constexpr int RCount = 60;//正空间划分mesh的密度。将每一条基矢等分成多少段。
+
 extern const double KCut;//平面波截断半径
 extern const double prec; //收敛的相对误差判据
 extern const int MaxStep; //最大迭代步数。超过就判定不收敛
@@ -34,7 +36,6 @@ extern const int LHalfCount;  //单边元胞数。考察的元胞放在正中间。
 extern const int LCount;  //沿每个基矢方向的晶胞数量。
 extern const int N;//晶胞数量
 extern const int KCount;//1BZ高对称点路径每段折线的K点数目
-extern const int RCount;//正空间划分mesh的密度。将每一条基矢等分成多少段。
 extern const int NSet;//基组个数
 
 extern GVector2D* Rls;  //所有要考虑的正空间格点
@@ -52,6 +53,9 @@ extern gsl_matrix
 * Vext_1, * Vext_2, //外场势能是个常数
 * sum_ee;           //求和常数打表
 
+extern double ewald[RCount*RCount];   //Ewald矩阵
+extern int rijs[RCount*RCount][2];       //位点编号->位点下标。用于计算Ewald矩阵中的对应位置。
+extern int posMap[RCount][RCount];       //rij位置->n
 
 double phi_1s(double r);  //1s轨道波函数，各向同性
 double phi_2s(double r);  //2s轨道波函数，各向同性
@@ -62,7 +66,7 @@ double simpleDis(const GVector2D& center, int a1, int a2);//不考虑平移对称性
 
 #define OPEN(fp, filename, mode)               \
 	FILE *fp;                                  \
-	fopen_s(&fp, filename, mode);              \
+	fp = fopen(filename, mode);                \
 	if (fp == NULL)                            \
 	{                                          \
 		printf("open %s failed.\n", filename); \
@@ -86,4 +90,12 @@ inline double Vee_sum_arg(int da, int db)
 	return gsl_matrix_get(sum_ee, da + RCount - 1, db + RCount - 1);
 }
 
+void init_ewald();
+
 void init_Vtable();
+
+/*
+ * 对实空间向量v作离散化处理，即给出以rij表示的参数i,j。
+ * 按绝对值处理方向
+ */
+void discretize_vector(const GVector2D& v, int& i, int& j);

@@ -9,7 +9,7 @@ K_names = ['K','G','M','K']
 excludes = []
 
 e=1.602176487e-19
-E0 = -5477  # 零点能量，按电子伏特
+E0 = 0  # 零点能量，按电子伏特
 
 with open(eig_file,'r') as fp:
     data = list(map(lambda line:list(map(float,line.split())),

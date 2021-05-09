@@ -44,7 +44,7 @@ const int LHalfCount = 10;
 const int LCount = 2 * LHalfCount + 1;
 const int N = LCount * LCount;//晶胞数量
 const int KCount=10;//1BZ高对称点路径每段折线的K点数目
-const int RCount=100;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
+//const int RCount=60;//正空间元胞划分mesh的密度。将每一条基矢等分成多少段。
 const int NSet = _cal_N_set();//基组数目
 
 
@@ -182,18 +182,22 @@ void output_reciprocal_matrix(const gsl_matrix_complex* m, const char* filename)
 gsl_matrix* _init_Vext(const GVector2D& r0)
 {
 	gsl_matrix* m = gsl_matrix_alloc(RCount, RCount);
+	int i0, j0;
+	discretize_vector(r0, i0, j0);
 	for (int i = 0; i < RCount; i++) {
 		for (int j = 0; j < RCount; j++) {
 			const GVector2D&& r = directPos(i, j);
 			const GVector2D&& t = r0 - r;
 			double s = 0;
-			for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
-				for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
-					const GVector2D&& Rl = A1 * l1 + A2 * l2;
-					s += 1.0 / r.dis(r0 + Rl);
-				}
-			}
-			gsl_matrix_set(m, i, j, -Z * e2k * s);
+			//for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
+			//	for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
+			//		const GVector2D&& Rl = A1 * l1 + A2 * l2;
+			//		s += 1.0 / r.dis(r0 + Rl);
+			//	}
+			//}
+			int n = posMap[abs(i0 - i)][abs(j0 - j)];
+			s = ewald[n]*2;
+			gsl_matrix_set(m, i, j, -Z * e * e * s);
 		}
 	}
 	return m;
@@ -208,18 +212,20 @@ gsl_matrix* _init_Vee_sum()
 	gsl_matrix* m = gsl_matrix_alloc(2 * RCount - 1, 2 * RCount - 1);
 	for (int a = -RCount + 1; a < RCount; a++) {
 		for (int b = -RCount + 1; b < RCount; b++) {
-			const GVector2D&& t = directPos(a, b);
-			double s = 0;
-			for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
-				for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
-					const GVector2D&& Rl = A1 * l1 + A2 * l2;
-					//全0是对应相同位置且同一个元胞，干脆就不算，当成0处理
-					if(a||b||l1||l2)
-						s += 1.0 / (t + Rl).abs();
-				}
-			}
+			//const GVector2D&& t = directPos(a, b);
+			//double s = 0;
+			//for (int l1 = -LHalfCount; l1 <= LHalfCount; l1++) {
+			//	for (int l2 = -LHalfCount; l2 <= LHalfCount; l2++) {
+			//		const GVector2D&& Rl = A1 * l1 + A2 * l2;
+			//		//全0是对应相同位置且同一个元胞，干脆就不算，当成0处理
+			//		if(a||b||l1||l2)
+			//			s += 1.0 / (t + Rl).abs();
+			//	}
+			//}
+			int n = posMap[abs(a)][abs(b)];
+			double s = ewald[n]*2;
 			gsl_matrix_set(m, a + RCount - 1, b + RCount - 1,
-				e2k * Omega * s / RCount / RCount / 2);
+				e*e * Omega * s / RCount / RCount / 2);
 		}
 	}
 	return m;
@@ -227,9 +233,46 @@ gsl_matrix* _init_Vee_sum()
 
 gsl_matrix* sum_ee = nullptr;
 
+double ewald[RCount*RCount];
+int rijs[RCount*RCount][2];
+int posMap[RCount][RCount];
+
+void init_ewald()
+{
+	char buf[100];
+	sprintf(buf, "Ewald2D%d.dat", RCount);
+	OPEN(fp, buf, "rb");
+	int32_t L;
+	fread(&L, sizeof(int32_t), 1, fp);
+	fread(ewald, sizeof(double), RCount*RCount, fp);
+	fclose(fp);
+	int n = 0;
+	for (int i = 0; i < RCount; i++) {
+		for (int j = 0; j < RCount; j++) {
+			rijs[n][0] = i;
+			rijs[n][1] = j;
+			posMap[i][j] = n++;
+		}
+	}
+}
+
 void init_Vtable()
 {
+	init_ewald();
 	Vext_1 = _init_Vext(r1);
 	Vext_2 = _init_Vext(r2);
 	sum_ee = _init_Vee_sum();
+}
+
+//仅针对石墨烯！！
+void discretize_vector(const GVector2D& v, int& i, int& j)
+{
+	double ca = v * A1, cb = v * A2;
+	double t = 2 / (3 * A0 * A0);
+	double x = 2 * t * ca - t * cb;
+	double y = -t * ca + 2 * t * cb;
+	i = int(round(fabs(x) * RCount));
+	j = int(round(fabs(y) * RCount));
+	cout << "descretize_vector: " << x << ", " << y << ", v=" << v << ", i=" << i
+		<< ", j=" << j << endl;
 }
